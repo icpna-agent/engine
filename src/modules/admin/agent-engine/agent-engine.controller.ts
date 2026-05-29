@@ -6,6 +6,7 @@ import {
   Post,
   Query,
   Res,
+  UseGuards,
 } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { AgentEngineService } from "./agent-engine.service";
@@ -13,6 +14,7 @@ import { NodeResponse } from "@models/agent.model";
 import { Meta } from "@models/meta.model";
 import { entry_production } from "./dto/entry-production.dto";
 import { Response } from "express";
+import { IpRateLimiterGuard } from "./guards/rate-limiter.guard";
 
 @ApiTags("engine")
 @Controller("engine")
@@ -30,6 +32,7 @@ export class AgentEngineController {
   }
 
   @Post("flow")
+  @UseGuards(IpRateLimiterGuard)
   @ApiOperation({ summary: "Run the production flow" })
   @ApiBody({ schema: { example: entry_production } })
   async runFlowProduction(
@@ -41,3 +44,4 @@ export class AgentEngineController {
     return this.agentEngineService.runFlowProduction(meta);
   }
 }
+
