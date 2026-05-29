@@ -11,9 +11,10 @@ export class IpRateLimiterGuard implements CanActivate {
   // Mapa en memoria para registrar las marcas de tiempo de las peticiones por IP
   private clients = new Map<string, number[]>();
 
-  // Configuración: Máximo 10 peticiones en una ventana de 2 segundos (2000 ms)
-  private readonly LIMIT = 10;
-  private readonly WINDOW_MS = 2000;
+  // Configuración: Máximo 2 peticiones en una ventana de 1 segundo (1000 ms)
+  private readonly LIMIT = 2;
+  private readonly WINDOW_MS = 1000;
+
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
