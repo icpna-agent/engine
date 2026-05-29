@@ -6,6 +6,7 @@ import { AgentEngineModule } from "./modules/admin/agent-engine/agent-engine.mod
 import { MemoryModule } from "./features/memory/memory.module";
 import { BookModule } from "./modules/admin/book/book.module";
 import { AuthModule } from "./modules/auth/auth.module";
+import { AgentModule } from "./modules/admin/agent/agent.module";
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { AuthModule } from "./modules/auth/auth.module";
     AgentEngineModule,
     AuthModule,
     BookModule,
+    AgentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

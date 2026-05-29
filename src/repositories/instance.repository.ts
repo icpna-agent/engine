@@ -1,10 +1,50 @@
 import { Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { database } from '@db/connection.db';
 import { instance, type Instance, type InstanceInsert } from '@db/tables/instance.table';
 
 @Injectable()
 export class InstanceRepository {
+  async findAllPaginated(
+    page = 1,
+    limit = 10,
+    filters?: { search?: string; botId?: number },
+  ): Promise<{ data: Instance[]; total: number }> {
+    const offset = (page - 1) * limit;
+    const conditions = [];
+
+    if (filters?.search) {
+      const term = `%${filters.search.trim()}%`;
+      conditions.push(
+        or(
+          ilike(instance.display_phone_number, term),
+          ilike(instance.business_id, term),
+          ilike(instance.phone_number_id, term),
+          ilike(instance.waba_id, term),
+        ),
+      );
+    }
+
+    if (filters?.botId) {
+      conditions.push(eq(instance.bot_id, filters.botId));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const [{ total }] = await database
+      .select({ total: count() })
+      .from(instance)
+      .where(whereClause);
+    const data = await database
+      .select()
+      .from(instance)
+      .where(whereClause)
+      .orderBy(desc(instance.id))
+      .limit(limit)
+      .offset(offset);
+
+    return { data, total: Number(total) };
+  }
+
   async findAll(): Promise<Instance[]> {
     return await database.select().from(instance);
   }

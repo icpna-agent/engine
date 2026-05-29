@@ -9,7 +9,11 @@ export class ProcessUserService {
 
   async process(context: Context): Promise<Context> {
     const phone = extractSenderPhone(context.payload.entry);
-    const user = await this.userRepository.findByPhone(phone);
+    let user = await this.userRepository.findByPhone(phone);
+
+    if (!user && phone) {
+      user = await this.userRepository.create({ phone });
+    }
 
     return {
       payload: { ...context.payload, user: user },
@@ -17,3 +21,4 @@ export class ProcessUserService {
     };
   }
 }
+

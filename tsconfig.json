@@ -27,6 +27,7 @@
       "@config/*": ["src/config/*"]
     },
     "incremental": true,
+    "tsBuildInfoFile": "dist/tsconfig.build.tsbuildinfo",
     "skipLibCheck": true,
     "strictNullChecks": false,
     "noImplicitAny": false,
