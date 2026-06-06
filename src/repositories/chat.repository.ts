@@ -1,38 +1,51 @@
 import { Injectable } from '@nestjs/common';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, isNull } from 'drizzle-orm';
 import { database } from '@db/connection.db';
 import { chat, ChatRemote, type Chat, type ChatInsert } from '@db/tables/chat.table';
 
 @Injectable()
 export class ChatRepository {
   async findAll(): Promise<Chat[]> {
-    return await database.select().from(chat);
+    return await database.select().from(chat).where(isNull(chat.deletedAt));
   }
 
   async findById(id: number): Promise<Chat | undefined> {
-    const result = await database.select().from(chat).where(eq(chat.id, id));
+    const result = await database
+      .select()
+      .from(chat)
+      .where(and(eq(chat.id, id), isNull(chat.deletedAt)));
     return result[0];
   }
 
   async findByBotId(botId: number): Promise<Chat[]> {
-    return await database.select().from(chat).where(eq(chat.bot_id, botId));
+    return await database
+      .select()
+      .from(chat)
+      .where(and(eq(chat.bot_id, botId), isNull(chat.deletedAt)));
   }
 
   async findByUserId(userId: number): Promise<Chat[]> {
-    return await database.select().from(chat).where(eq(chat.user_id, userId));
+    return await database
+      .select()
+      .from(chat)
+      .where(and(eq(chat.user_id, userId), isNull(chat.deletedAt)));
   }
 
   async findByBotAndUser(botId: number, userId: number): Promise<Chat | undefined> {
-    const result = await database.select().from(chat).where(
-      and(eq(chat.bot_id, botId), eq(chat.user_id, userId))
-    );
+    const result = await database
+      .select()
+      .from(chat)
+      .where(and(eq(chat.bot_id, botId), eq(chat.user_id, userId), isNull(chat.deletedAt)));
     return result[0];
   }
 
   async findLastByBotAndUser(botId: number, userId: number): Promise<Chat | undefined> {
-    const result = await database.select().from(chat).where(
-      and(eq(chat.bot_id, botId), eq(chat.user_id, userId))
-    ).orderBy(desc(chat.created)).limit(1);
+    const result = await database
+      .select()
+      .from(chat)
+      .where(and(eq(chat.bot_id, botId), eq(chat.user_id, userId), isNull(chat.deletedAt)))
+      .orderBy(desc(chat.createdAt))
+      .limit(1);
     return result[0];
   }
 
@@ -56,11 +69,18 @@ export class ChatRepository {
   }
 
   async update(id: number, data: Partial<ChatInsert>): Promise<Chat | undefined> {
-    const result = await database.update(chat).set(data).where(eq(chat.id, id)).returning();
+    const result = await database
+      .update(chat)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(chat.id, id), isNull(chat.deletedAt)))
+      .returning();
     return result[0];
   }
 
   async delete(id: number): Promise<void> {
-    await database.delete(chat).where(eq(chat.id, id));
+    await database
+      .update(chat)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(and(eq(chat.id, id), isNull(chat.deletedAt)));
   }
 }

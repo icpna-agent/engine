@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, serial, integer, text, jsonb, timestamp } from 'drizzle-orm/pg-core';
 import { chat } from './chat.table';
 
 export const message = pgTable('message', {
@@ -10,6 +10,9 @@ export const message = pgTable('message', {
   media: jsonb('media'),
   quoted: jsonb('quoted'),
   chat_id: integer('chat_id').notNull().references(() => chat.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 export type Message = typeof message.$inferSelect;

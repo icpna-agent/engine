@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, serial, integer, text, pgEnum, timestamp } from 'drizzle-orm/pg-core';
 import { bot } from './bot.table';
 
 export const whatsappTypeEnum = pgEnum('whatsapp_type', ['business']);
@@ -14,6 +14,9 @@ export const instance = pgTable('instance', {
   display_phone_number: text('display_phone_number').notNull(),
   waba_id: text('waba_id').notNull(),
   token: text('token').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 export type Instance = typeof instance.$inferSelect;

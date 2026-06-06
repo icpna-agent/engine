@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { database } from '@db/connection.db';
 import { bot, type Bot, type BotInsert, type BotModel } from '@db/tables/bot.table';
 
@@ -11,7 +11,7 @@ export class BotRepository {
     filters?: { search?: string; model?: BotModel },
   ): Promise<{ data: Bot[]; total: number }> {
     const offset = (page - 1) * limit;
-    const conditions = [];
+    const conditions = [isNull(bot.deletedAt)];
 
     if (filters?.search) {
       const term = `%${filters.search.trim()}%`;
@@ -28,7 +28,7 @@ export class BotRepository {
       conditions.push(eq(bot.model, filters.model));
     }
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const whereClause = and(...conditions);
     const [{ total }] = await database
       .select({ total: count() })
       .from(bot)
@@ -45,16 +45,22 @@ export class BotRepository {
   }
 
   async findAll(): Promise<Bot[]> {
-    return await database.select().from(bot);
+    return await database.select().from(bot).where(isNull(bot.deletedAt));
   }
 
   async findById(id: number): Promise<Bot | undefined> {
-    const result = await database.select().from(bot).where(eq(bot.id, id));
+    const result = await database
+      .select()
+      .from(bot)
+      .where(and(eq(bot.id, id), isNull(bot.deletedAt)));
     return result[0];
   }
 
   async findByPhone(phone: string): Promise<Bot | undefined> {
-    const result = await database.select().from(bot).where(eq(bot.phone, phone));
+    const result = await database
+      .select()
+      .from(bot)
+      .where(and(eq(bot.phone, phone), isNull(bot.deletedAt)));
     return result[0];
   }
 
@@ -64,11 +70,18 @@ export class BotRepository {
   }
 
   async update(id: number, data: Partial<BotInsert>): Promise<Bot | undefined> {
-    const result = await database.update(bot).set(data).where(eq(bot.id, id)).returning();
+    const result = await database
+      .update(bot)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(bot.id, id), isNull(bot.deletedAt)))
+      .returning();
     return result[0];
   }
 
   async delete(id: number): Promise<void> {
-    await database.delete(bot).where(eq(bot.id, id));
+    await database
+      .update(bot)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(and(eq(bot.id, id), isNull(bot.deletedAt)));
   }
 }

@@ -1,4 +1,4 @@
-import { pgTable, serial, text, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, pgEnum, timestamp } from 'drizzle-orm/pg-core';
 
 export const botModel= pgEnum('bot_model', ['gpt', 'gemini']);
 
@@ -8,6 +8,9 @@ export const bot = pgTable('bot', {
   name: text('name').notNull(),
   prompt: text('prompt').notNull(),
   model: botModel('model').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 export type Bot = typeof bot.$inferSelect;

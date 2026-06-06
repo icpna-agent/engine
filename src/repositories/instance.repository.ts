@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { database } from '@db/connection.db';
 import { instance, type Instance, type InstanceInsert } from '@db/tables/instance.table';
 
@@ -11,7 +11,7 @@ export class InstanceRepository {
     filters?: { search?: string; botId?: number },
   ): Promise<{ data: Instance[]; total: number }> {
     const offset = (page - 1) * limit;
-    const conditions = [];
+    const conditions = [isNull(instance.deletedAt)];
 
     if (filters?.search) {
       const term = `%${filters.search.trim()}%`;
@@ -29,7 +29,7 @@ export class InstanceRepository {
       conditions.push(eq(instance.bot_id, filters.botId));
     }
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const whereClause = and(...conditions);
     const [{ total }] = await database
       .select({ total: count() })
       .from(instance)
@@ -46,26 +46,38 @@ export class InstanceRepository {
   }
 
   async findAll(): Promise<Instance[]> {
-    return await database.select().from(instance);
+    return await database.select().from(instance).where(isNull(instance.deletedAt));
   }
 
   async findById(id: number): Promise<Instance | undefined> {
-    const result = await database.select().from(instance).where(eq(instance.id, id));
+    const result = await database
+      .select()
+      .from(instance)
+      .where(and(eq(instance.id, id), isNull(instance.deletedAt)));
     return result[0];
   }
 
   async findByBotId(botId: number): Promise<Instance | undefined> {
-    const result = await database.select().from(instance).where(eq(instance.bot_id, botId));
+    const result = await database
+      .select()
+      .from(instance)
+      .where(and(eq(instance.bot_id, botId), isNull(instance.deletedAt)));
     return result[0];
   }
 
   async findByPhoneNumberId(phoneNumberId: string): Promise<Instance | undefined> {
-    const result = await database.select().from(instance).where(eq(instance.phone_number_id, phoneNumberId));
+    const result = await database
+      .select()
+      .from(instance)
+      .where(and(eq(instance.phone_number_id, phoneNumberId), isNull(instance.deletedAt)));
     return result[0];
   }
 
   async findByDisplayPhoneNumber(displayPhoneNumber: string): Promise<Instance | undefined> {
-    const result = await database.select().from(instance).where(eq(instance.display_phone_number, displayPhoneNumber));
+    const result = await database
+      .select()
+      .from(instance)
+      .where(and(eq(instance.display_phone_number, displayPhoneNumber), isNull(instance.deletedAt)));
     return result[0];
   }
 
@@ -75,11 +87,18 @@ export class InstanceRepository {
   }
 
   async update(id: number, data: Partial<InstanceInsert>): Promise<Instance | undefined> {
-    const result = await database.update(instance).set(data).where(eq(instance.id, id)).returning();
+    const result = await database
+      .update(instance)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(instance.id, id), isNull(instance.deletedAt)))
+      .returning();
     return result[0];
   }
 
   async delete(id: number): Promise<void> {
-    await database.delete(instance).where(eq(instance.id, id));
+    await database
+      .update(instance)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(and(eq(instance.id, id), isNull(instance.deletedAt)));
   }
 }
