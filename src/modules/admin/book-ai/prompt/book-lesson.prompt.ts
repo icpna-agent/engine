@@ -43,5 +43,9 @@ Reglas de extracción detalladas:
 9. bookPage: El número de página real del libro provisto por parámetro: ${bookPage}.
 10. bookId: El ID del libro provisto por parámetro: ${bookId}.
 
-Retorna únicamente el arreglo JSON de objetos que cumplan con esta estructura.`;
+11. EXCEPCIÓN - PÁGINAS SIN EJERCICIOS/LECCIONES:
+    - Si la página provista es una portada de unidad, una página de título general, o una página que contiene únicamente una foto/ilustración completa a página completa (como la página 5) y NO TIENE lecciones, actividades, preguntas ni ejercicios para extraer:
+    - Retorna obligatoriamente un arreglo vacío en el campo "inserts" (es decir: { "inserts": [] }).
+
+Retorna únicamente el objeto JSON que cumpla con esta estructura.`;
 }

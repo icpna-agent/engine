@@ -10,7 +10,7 @@ import { ProcessUserService } from "../nodos/process-user.service";
 import { ProcessBotService } from "../nodos/process-bot.service";
 import { ProcessChatService } from "../nodos/process-chat.service";
 import { ProcessMessagesService } from "../nodos/process-message.service";
-import { ProcessResponseService } from "./../nodos/process-response.service";
+import { ProcessResponseService } from "../nodos/process-response.service";
 import { ProcessSendService } from "../nodos/process-send.service";
 import { ProcessInstanceService } from "../nodos/process-instance.service";
 import { CallbackHandler } from "@langfuse/langchain";
@@ -27,7 +27,7 @@ export class FlowService {
     private processResponseService: ProcessResponseService,
     private processSendService: ProcessSendService,
     private clientService: ClientService,
-  ) {}
+  ) { }
 
   private async processBot(context: Context) {
     const response = await this.processBotService.process(context);

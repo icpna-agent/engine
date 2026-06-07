@@ -12,7 +12,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
-    "types": ["node"],
+    "types": ["node", "multer"],
     "paths": {
       "@core/*": ["src/core/*"],
       "@models/*": ["src/models/*"],
