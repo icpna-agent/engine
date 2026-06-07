@@ -23,7 +23,8 @@ RUN npm run build
 RUN ls -la dist/
 
 # Etapa de producción
-FROM node:20-alpine
+# Usamos la imagen oficial de Playwright que incluye Node.js y los navegadores/dependencias del sistema listos para usar
+FROM mcr.microsoft.com/playwright:v1.60.0-noble
 
 WORKDIR /app
 
