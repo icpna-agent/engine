@@ -1,10 +1,43 @@
 import { Injectable } from '@nestjs/common';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, isNull } from 'drizzle-orm';
 import { database } from '@db/connection.db';
 import { user, type User, type UserInsert } from '@db/tables/user.table';
 
 @Injectable()
 export class UserRepository {
+  async findAllPaginated(
+    page = 1,
+    limit = 10,
+    filters?: { search?: string; enabled?: boolean },
+  ): Promise<{ data: User[]; total: number }> {
+    const offset = (page - 1) * limit;
+    const conditions = [isNull(user.deletedAt)];
+
+    if (filters?.search) {
+      const term = `%${filters.search.trim()}%`;
+      conditions.push(ilike(user.phone, term));
+    }
+
+    if (filters?.enabled !== undefined) {
+      conditions.push(eq(user.enabled, filters.enabled));
+    }
+
+    const whereClause = and(...conditions);
+    const [{ total }] = await database
+      .select({ total: count() })
+      .from(user)
+      .where(whereClause);
+    const data = await database
+      .select()
+      .from(user)
+      .where(whereClause)
+      .orderBy(desc(user.id))
+      .limit(limit)
+      .offset(offset);
+
+    return { data, total: Number(total) };
+  }
+
   async findAll(): Promise<User[]> {
     return await database.select().from(user).where(isNull(user.deletedAt));
   }

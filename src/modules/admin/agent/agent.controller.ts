@@ -29,6 +29,8 @@ import {
   InstanceListFiltersDto,
 } from "./dto/instance/instance-list.dto";
 import { InstanceResultDto } from "./dto/instance/instance-result.dto";
+import { BotDeleteResultDto } from "./dto/bot/bot-delete-result.dto";
+import { InstanceDeleteResultDto } from "./dto/instance/instance-delete-result.dto";
 
 @ApiTags("agent")
 @ApiBearerAuth()
@@ -72,12 +74,7 @@ export class AgentController {
   @Delete("delete/:id")
   @ApiOperation({ summary: "Delete an agent" })
   @ApiParam({ name: "id", type: Number })
-  @ApiOkResponse({
-    schema: {
-      type: "object",
-      properties: { success: { type: "boolean", example: true } },
-    },
-  })
+  @ApiOkResponse({ type: BotDeleteResultDto })
   deleteBot(@Param("id") id: string) {
     return this.agentService.deleteBot(+id);
   }
@@ -117,12 +114,7 @@ export class AgentController {
   @Delete("instance/delete/:id")
   @ApiOperation({ summary: "Delete a WhatsApp instance" })
   @ApiParam({ name: "id", type: Number })
-  @ApiOkResponse({
-    schema: {
-      type: "object",
-      properties: { success: { type: "boolean", example: true } },
-    },
-  })
+  @ApiOkResponse({ type: InstanceDeleteResultDto })
   deleteInstance(@Param("id") id: string) {
     return this.agentService.deleteInstance(+id);
   }

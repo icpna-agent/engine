@@ -5,8 +5,11 @@ import { SchemaModule } from "./features/schema/schema.module";
 import { AgentEngineModule } from "./modules/admin/agent-engine/agent-engine.module";
 import { MemoryModule } from "./features/memory/memory.module";
 import { BookModule } from "./modules/admin/book/book.module";
+import { BookAutoModule } from "./modules/admin/book-auto/book-auto.module";
+import { BookAiModule } from "./modules/admin/book-ai/book-ai.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { AgentModule } from "./modules/admin/agent/agent.module";
+import { UserModule } from "./modules/admin/user/user.module";
 
 @Module({
   imports: [
@@ -16,7 +19,10 @@ import { AgentModule } from "./modules/admin/agent/agent.module";
     AgentEngineModule,
     AuthModule,
     BookModule,
+    BookAutoModule,
+    BookAiModule,
     AgentModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],
