@@ -54,4 +54,7 @@ export class BookResultDto {
 
   @ApiPropertyOptional({ nullable: true })
   deletedAt: Date | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  urlPreview: string | null;
 }

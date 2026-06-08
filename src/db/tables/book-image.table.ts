@@ -1,4 +1,5 @@
 import {
+  bigint,
   index,
   integer,
   pgTable,
@@ -14,7 +15,7 @@ export const bookImage = pgTable(
     id: serial("id").primaryKey(),
     url: text("url").notNull(),
     bookPage: integer("book_page").notNull(),
-    metaMediaId: integer("meta_media_id"),
+    metaMediaId: bigint("meta_media_id", { mode: "number" }),
     bookId: integer("book_id")
       .notNull()
       .references(() => book.id),

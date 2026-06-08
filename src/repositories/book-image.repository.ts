@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { and, count, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, count, eq, isNull } from "drizzle-orm";
 import { database } from "@db/connection.db";
 import {
   bookImage,
@@ -35,7 +35,7 @@ export class BookImageRepository {
       .select()
       .from(bookImage)
       .where(whereClause)
-      .orderBy(desc(bookImage.createdAt))
+      .orderBy(asc(bookImage.createdAt))
       .limit(limit)
       .offset(offset);
 

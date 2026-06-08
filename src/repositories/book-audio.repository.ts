@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { and, count, desc, eq, ilike, isNull, or } from "drizzle-orm";
+import { and, asc, count, eq, ilike, isNull, or } from "drizzle-orm";
 import { database } from "@db/connection.db";
 import {
   bookAudio,
@@ -46,7 +46,7 @@ export class BookAudioRepository {
       .select()
       .from(bookAudio)
       .where(whereClause)
-      .orderBy(desc(bookAudio.createdAt))
+      .orderBy(asc(bookAudio.createdAt))
       .limit(limit)
       .offset(offset);
 

@@ -1,4 +1,5 @@
 import {
+  bigint,
   index,
   integer,
   pgTable,
@@ -16,7 +17,7 @@ export const bookAudio = pgTable(
     audioIndex: text("index").notNull(),
     transcription: text("transcription"),
     bookPage: integer("book_page").notNull(),
-    metaMediaId: integer("meta_media_id"),
+    metaMediaId: bigint("meta_media_id", { mode: "number" }),
     bookId: integer("book_id")
       .notNull()
       .references(() => book.id),

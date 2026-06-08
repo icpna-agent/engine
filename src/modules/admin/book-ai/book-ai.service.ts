@@ -7,18 +7,21 @@ import { BookIndexCreateDto } from "../book/dto/book-index/book-index-create.dto
 import { BookUnitCreateDto } from "../book/dto/book-unit/book-unit-create.dto";
 import { BookLessonCreateDto } from "../book/dto/book-lesson/book-lesson-create.dto";
 import { BookPanelCreateDto } from "../book/dto/book-panel/book-panel-create.dto";
+import { BookAudioCreateDto } from "../book/dto/book-audio/book-audio-create.dto";
 
 // Importación de esquemas Zod
 import { bookIndexResponseSchema, BookIndexResponseType } from "./schema/book-index.schema";
 import { bookUnitResponseSchema, BookUnitResponseType } from "./schema/book-unit.schema";
 import { bookLessonResponseSchema, BookLessonResponseType } from "./schema/book-lesson.schema";
 import { bookPanelResponseSchema, BookPanelResponseType } from "./schema/book-panel.schema";
+import { bookAudioResponseSchema, BookAudioResponseType } from "./schema/book-audio.schema";
 
 // Importación de prompts de IA
 import { getBookIndexPrompt } from "./prompt/book-index.prompt";
 import { getBookUnitPrompt } from "./prompt/book-unit.prompt";
 import { getBookLessonPrompt } from "./prompt/book-lesson.prompt";
 import { getBookPanelPrompt } from "./prompt/book-panel.prompt";
+import { getBookAudioPrompt } from "./prompt/book-audio.prompt";
 
 @Injectable()
 export class BookAiService {
@@ -72,12 +75,27 @@ export class BookAiService {
     return result.inserts as BookPanelCreateDto[];
   }
 
+  async previewBookAudio(dto: BookPreviewDto): Promise<BookAudioCreateDto[]> {
+    const { bookId, bookPage } = dto;
+    const prompt = getBookAudioPrompt(bookPage ?? 0, bookId ?? 0);
+
+    const result = await this.generatePreview<BookAudioResponseType>(
+      dto,
+      prompt,
+      bookAudioResponseSchema,
+    );
+    return result.inserts as BookAudioCreateDto[];
+  }
+
   private async generatePreview<T>(
     dto: BookPreviewDto,
     prompt: string,
     schema: z.ZodType<T>,
   ): Promise<T> {
-    const { image } = dto;
+    const { image, bookPage, bookId } = dto;
+    console.log(`🤖 [BookAiService] generatePreview called for bookId: ${bookId}, bookPage: ${bookPage}`);
+    console.log(`🤖 [BookAiService] Prompt length: ${prompt.length} chars. Image base64 length: ${image.length} chars.`);
+
     let base64Data = image;
     let mimeType = "image/jpeg";
 
@@ -89,7 +107,9 @@ export class BookAiService {
       }
     }
 
+    console.log(`🤖 [BookAiService] Getting ChatGeminiAI LLM instance...`);
     const llm = this.clientService.getChatGeminiAI();
+    console.log(`🤖 [BookAiService] Applying structured output schema...`);
     const structuredLlm = llm.withStructuredOutput(schema);
 
     const message = new HumanMessage({
@@ -106,10 +126,14 @@ export class BookAiService {
     });
 
     try {
+      console.log(`🤖 [BookAiService] Sending structuredLlm.invoke request...`);
+      const startTime = Date.now();
       const response = await structuredLlm.invoke([message]);
+      const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+      console.log(`🤖 [BookAiService] structuredLlm.invoke success in ${duration}s. Response parsed successfully.`);
       return response as T;
     } catch (error) {
-      console.error("Error in Gemini structured invocation in BookAiService:", error);
+      console.error("❌ [BookAiService] Error in Gemini structured invocation:", error);
       throw error;
     }
   }

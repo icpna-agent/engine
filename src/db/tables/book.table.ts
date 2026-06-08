@@ -46,6 +46,7 @@ export const book = pgTable(
     targetProgram: bookTargetProgramEnum("target_program").notNull(),
     cefrEquivalent: bookCefrEquivalentEnum("cefr_equivalent"),
     active: boolean("active").default(true).notNull(),
+    urlPreview: text("url_preview"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
     deletedAt: timestamp("deleted_at"),

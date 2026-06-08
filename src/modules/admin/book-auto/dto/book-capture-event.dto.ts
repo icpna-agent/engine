@@ -20,6 +20,9 @@ export class BookCapturePageDataDto {
 
   @ApiProperty({ example: 2, description: "Progreso del proceso en porcentaje (0-100)" })
   progress: number;
+
+  @ApiProperty({ example: true, description: "Indica si la página contiene reproductores de audio", required: false })
+  hasAudio?: boolean;
 }
 
 export class BookCaptureCompleteDataDto {

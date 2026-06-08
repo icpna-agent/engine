@@ -7,6 +7,7 @@ import { BookIndexCreateDto } from "../book/dto/book-index/book-index-create.dto
 import { BookUnitCreateDto } from "../book/dto/book-unit/book-unit-create.dto";
 import { BookLessonCreateDto } from "../book/dto/book-lesson/book-lesson-create.dto";
 import { BookPanelCreateDto } from "../book/dto/book-panel/book-panel-create.dto";
+import { BookAudioCreateDto } from "../book/dto/book-audio/book-audio-create.dto";
 
 @ApiTags("book-ai")
 @ApiBearerAuth()
@@ -41,5 +42,12 @@ export class BookAiController {
   @ApiOkResponse({ type: [BookPanelCreateDto], description: "Arreglo de posibles inserciones para la tabla book_panel" })
   async previewBookPanel(@Body() dto: BookPreviewDto): Promise<BookPanelCreateDto[]> {
     return this.bookAiService.previewBookPanel(dto);
+  }
+
+  @Post("preview-book-audio")
+  @ApiOperation({ summary: "Analiza una imagen de página y devuelve una lista de posibles inserts para book_audio" })
+  @ApiOkResponse({ type: [BookAudioCreateDto], description: "Arreglo de posibles inserciones para la tabla book_audio" })
+  async previewBookAudio(@Body() dto: BookPreviewDto): Promise<BookAudioCreateDto[]> {
+    return this.bookAiService.previewBookAudio(dto);
   }
 }

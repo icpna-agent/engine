@@ -71,4 +71,9 @@ export class BookCreateDto {
   @ApiProperty({ example: true, default: true })
   @IsBoolean()
   active: boolean;
+
+  @ApiPropertyOptional({ example: "https://duxebhp63ladi.cloudfront.net/americanbigpicture/flipbook/b1p/abp8b1p_sb/index.html" })
+  @IsString()
+  @IsOptional()
+  urlPreview?: string;
 }

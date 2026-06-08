@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { and, count, desc, eq, ilike, isNull } from "drizzle-orm";
+import { and, asc, count, eq, ilike, isNull } from "drizzle-orm";
 import { database } from "@db/connection.db";
 import {
   bookIndex,
@@ -38,7 +38,7 @@ export class BookIndexRepository {
       .select()
       .from(bookIndex)
       .where(whereClause)
-      .orderBy(desc(bookIndex.createdAt))
+      .orderBy(asc(bookIndex.createdAt))
       .limit(limit)
       .offset(offset);
 
