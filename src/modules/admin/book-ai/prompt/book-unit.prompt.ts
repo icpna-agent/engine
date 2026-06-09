@@ -12,5 +12,22 @@ Reglas de extracción detalladas:
 7. bookPage: Identifica el número de página de inicio de la unidad que aparece justo debajo del título de la unidad (ej: para Unit 10 dice "page 2", extrae el entero 2; para Unit 11 dice "page 12", extrae el entero 12). Si no se encuentra ningún número de página para la unidad, usa el valor por defecto: ${bookPage}.
 8. bookId: El ID del libro provisto por parámetro: ${bookId}.
 
-Retorna únicamente el arreglo JSON de objetos que cumplan con esta estructura.`;
+Devuelve la respuesta en formato JSON encerrado en un bloque de código markdown \`\`\`json
+{
+  "inserts": [
+    {
+      "number": 1,
+      "title": "...",
+      "grammar": ["..."],
+      "vocabulary": ["..."],
+      "readingListening": ["..."],
+      "pronunciation": ["..."],
+      "bookPage": ${bookPage},
+      "bookId": ${bookId}
+    }
+  ]
 }
+\`\`\`. No agregues explicaciones adicionales fuera de este bloque.`;
+}
+
+

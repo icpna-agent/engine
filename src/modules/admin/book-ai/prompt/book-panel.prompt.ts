@@ -25,10 +25,11 @@ Reglas de extracción detalladas:
    - Si es un panel puramente explicativo (como notas gramaticales que no tienen una consigna de ejercicio), déjalo como null.
 
 5. content:
-   - Debe ser un objeto JSON súper simple con una única propiedad llamada "text".
-   - El valor de "text" debe contener todo el contenido de texto, tablas, ejemplos o recuadros de palabras pertenecientes a ese bloque, ordenados de forma legible y estructurada, usando saltos de línea \\n para separar renglones.
-   - Ejemplo:
-     { "text": "articles belongings contents items\\n1 individual objects ___\\n2 objects in general ___" }
+   - Debe ser una cadena de texto (string) en inglés.
+   - Contiene todo el contenido de texto, tablas, ejemplos o recuadros de palabras pertenecientes a ese bloque, ordenados de forma legible y estructurada.
+   - Si tiene múltiples líneas, usa saltos de línea '\\n' para separar renglones.
+   - Ejemplo de contenido de texto plano:
+     "articles belongings contents items\\n1 individual objects ___\\n2 objects in general ___"
 
 6. Regla de división (Multi-registro por panel):
    - Si un panel contiene múltiples actividades, instrucciones o secciones explicativas independientes (ej: la sección A tiene 2 ejercicios con instrucciones distintas; o el panel "QUANTIFIERS" se subdivide en explicaciones para "Much & many" y "Few & little"):
@@ -38,5 +39,21 @@ Reglas de extracción detalladas:
 7. bookPage: El número de página real del libro provisto por parámetro: ${bookPage}.
 8. bookId: El ID del libro provisto por parámetro: ${bookId}.
 
-Retorna únicamente el objeto JSON que cumpla con esta estructura.`;
+Devuelve la respuesta en formato JSON encerrado en un bloque de código markdown \`\`\`json
+{
+  "inserts": [
+    {
+      "title": "KEY VOCABULARY",
+      "theme": "Belongings",
+      "subTheme": "A Nouns",
+      "instruction": "Match the words...",
+      "content": "articles belongings contents...",
+      "bookPage": ${bookPage},
+      "bookId": ${bookId}
+    }
+  ]
 }
+\`\`\`. No agregues explicaciones adicionales fuera de este bloque.`;
+}
+
+

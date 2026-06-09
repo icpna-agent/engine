@@ -50,10 +50,10 @@ export class BookLessonCreateDto {
   @IsOptional()
   instruction?: string;
 
-  @ApiPropertyOptional({ example: { items: [] } })
-  @IsObject()
+  @ApiPropertyOptional({ example: "Some additional text or exercises content" })
+  @IsString()
   @IsOptional()
-  content?: Record<string, unknown>;
+  content?: string;
 
   @ApiProperty({ example: 4 })
   @Type(() => Number)

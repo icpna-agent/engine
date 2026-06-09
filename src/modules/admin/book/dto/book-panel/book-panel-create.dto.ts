@@ -31,10 +31,10 @@ export class BookPanelCreateDto {
   @IsOptional()
   instruction?: string;
 
-  @ApiPropertyOptional({ example: { sections: [] } })
-  @IsObject()
+  @ApiPropertyOptional({ example: "Some additional text or panel content" })
+  @IsString()
   @IsOptional()
-  content?: Record<string, unknown>;
+  content?: string;
 
   @ApiProperty({ example: 5 })
   @Type(() => Number)

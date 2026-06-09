@@ -149,7 +149,7 @@ export class BookAutoService {
           console.log(`🚀 [insertIa] 1. Uploading page image to Storage & Meta...`);
           subscriber.next({
             type: "progress",
-            data: JSON.stringify({ message: "Subiendo imagen de la página a Storage y Meta..." }),
+            data: JSON.stringify({ message: "Subiendo imagen..." }),
           });
 
           let base64Image = dto.image;
@@ -184,20 +184,9 @@ export class BookAutoService {
             console.log(`⚠️ [insertIa] Process cancelled after upload for page: ${dto.bookPage}`);
             return;
           }
-          subscriber.next({
-            type: "progress",
-            data: JSON.stringify({
-              message: `Imagen subida con éxito. URL: ${uploadResult.url}`,
-            }),
-          });
 
           // 2. Register/update in book_image table
           console.log(`💾 [insertIa] 2. Querying/updating book_image database table...`);
-          subscriber.next({
-            type: "progress",
-            data: JSON.stringify({ message: "Registrando página en la base de datos (book_image)..." }),
-          });
-
           const [existingImage] = await database
              .select()
              .from(bookImage)
@@ -230,10 +219,6 @@ export class BookAutoService {
             console.log(`⚠️ [insertIa] Process cancelled after database registration for page: ${dto.bookPage}`);
             return;
           }
-          subscriber.next({
-            type: "progress",
-            data: JSON.stringify({ message: "Página registrada exitosamente en book_image." }),
-          });
 
           // 3. Process AI detection for each badge
           const previewDto = {
@@ -253,104 +238,64 @@ export class BookAutoService {
             if (badge === "index") {
               subscriber.next({
                 type: "progress",
-                data: JSON.stringify({ message: "Analizando contenido de índice mediante IA..." }),
+                data: JSON.stringify({ message: "Creando Índices..." }),
               });
               const items = await this.bookAiService.previewBookIndex(previewDto);
               console.log(`🤖 [insertIa] IA detected ${items.length} index items. Saving to DB...`);
-              subscriber.next({
-                type: "progress",
-                data: JSON.stringify({ message: `IA detectó ${items.length} elementos de índice. Registrando...` }),
-              });
               for (const item of items) {
                 if (isCancelled) return;
                 await this.bookService.createBookIndex(item);
               }
               console.log(`🤖 [insertIa] Saved index items successfully.`);
-              subscriber.next({
-                type: "progress",
-                data: JSON.stringify({ message: `Índice registrado con éxito (${items.length} elementos).` }),
-              });
             } else if (badge === "unit") {
               subscriber.next({
                 type: "progress",
-                data: JSON.stringify({ message: "Analizando contenido de unidad mediante IA..." }),
+                data: JSON.stringify({ message: "Creando Unidades..." }),
               });
               const items = await this.bookAiService.previewBookUnit(previewDto);
               console.log(`🤖 [insertIa] IA detected ${items.length} unit items. Saving to DB...`);
-              subscriber.next({
-                type: "progress",
-                data: JSON.stringify({ message: `IA detectó ${items.length} unidades. Registrando...` }),
-              });
               for (const item of items) {
                 if (isCancelled) return;
                 await this.bookService.createBookUnit(item);
               }
               console.log(`🤖 [insertIa] Saved unit items successfully.`);
-              subscriber.next({
-                type: "progress",
-                data: JSON.stringify({ message: `Unidades registradas con éxito (${items.length} elementos).` }),
-              });
             } else if (badge === "lesson") {
               subscriber.next({
                 type: "progress",
-                data: JSON.stringify({ message: "Analizando lecciones mediante IA..." }),
+                data: JSON.stringify({ message: "Creando Lecciones..." }),
               });
               console.log(`🤖 [insertIa] Calling bookAiService.previewBookLesson...`);
               const items = await this.bookAiService.previewBookLesson(previewDto);
               console.log(`🤖 [insertIa] IA detected ${items.length} lesson items. Saving to DB...`);
-              subscriber.next({
-                type: "progress",
-                data: JSON.stringify({ message: `IA detectó ${items.length} lecciones. Registrando...` }),
-              });
               for (const item of items) {
                 if (isCancelled) return;
                 await this.bookService.createBookLesson(item);
               }
               console.log(`🤖 [insertIa] Saved lesson items successfully.`);
-              subscriber.next({
-                type: "progress",
-                data: JSON.stringify({ message: `Lecciones registradas con éxito (${items.length} elementos).` }),
-              });
             } else if (badge === "panel") {
               subscriber.next({
                 type: "progress",
-                data: JSON.stringify({ message: "Analizando paneles mediante IA..." }),
+                data: JSON.stringify({ message: "Creando Paneles..." }),
               });
               const items = await this.bookAiService.previewBookPanel(previewDto);
               console.log(`🤖 [insertIa] IA detected ${items.length} panel items. Saving to DB...`);
-              subscriber.next({
-                type: "progress",
-                data: JSON.stringify({ message: `IA detectó ${items.length} paneles. Registrando...` }),
-              });
               for (const item of items) {
                 if (isCancelled) return;
                 await this.bookService.createBookPanel(item);
               }
               console.log(`🤖 [insertIa] Saved panel items successfully.`);
-              subscriber.next({
-                type: "progress",
-                data: JSON.stringify({ message: `Paneles registrados con éxito (${items.length} elementos).` }),
-              });
             } else if (badge === "audio") {
               subscriber.next({
                 type: "progress",
-                data: JSON.stringify({ message: "Analizando audios mediante IA..." }),
+                data: JSON.stringify({ message: "Creando Audios..." }),
               });
               const items = await this.bookAiService.previewBookAudio(previewDto);
               console.log(`🤖 [insertIa] IA detected ${items.length} audio items. Saving to DB...`);
-              subscriber.next({
-                type: "progress",
-                data: JSON.stringify({ message: `IA detectó ${items.length} audios. Registrando...` }),
-              });
               for (const item of items) {
                 if (isCancelled) return;
                 await this.bookService.createBookAudio(item);
               }
               console.log(`🤖 [insertIa] Saved audio items successfully.`);
-              subscriber.next({
-                type: "progress",
-                data: JSON.stringify({ message: `Audios registrados con éxito (${items.length} elementos).` }),
-              });
             }
           }
 

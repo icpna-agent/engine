@@ -26,7 +26,7 @@ export const bookLesson = pgTable(
     activityNumber: integer("activity_number"),
     letterNumber: text("letter_number"),
     instruction: text("instruction"),
-    content: jsonb("content").$type<Record<string, unknown>>(),
+    content: text("content"),
     bookPage: integer("book_page").notNull(),
     bookId: integer("book_id")
       .notNull()

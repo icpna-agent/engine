@@ -9,7 +9,7 @@ export const bookLessonItemSchema = z.object({
   activityNumber: z.number().optional().describe("El número del ejercicio si aplica (ej: 1)."),
   letterNumber: z.string().optional().describe("La letra del subejercicio si aplica (ej: 'a')."),
   instruction: z.string().optional().describe("La instrucción o enunciado del ejercicio en inglés."),
-  content: z.record(z.unknown()).optional().describe("Estructura JSON adicional con más detalles de la actividad."),
+  content: z.string().optional().describe("Contenido adicional o texto de la actividad."),
   bookPage: z.number().describe("El número de página real de la imagen provista."),
   bookId: z.number().describe("El ID del libro al que pertenece."),
 });

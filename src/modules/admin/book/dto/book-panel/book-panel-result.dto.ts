@@ -17,7 +17,7 @@ export class BookPanelResultDto {
   instruction: string | null;
 
   @ApiPropertyOptional({ nullable: true })
-  content: Record<string, unknown> | null;
+  content: string | null;
 
   @ApiProperty()
   bookPage: number;

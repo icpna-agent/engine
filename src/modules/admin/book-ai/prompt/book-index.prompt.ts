@@ -23,5 +23,18 @@ Reglas críticas de extracción:
    - bookPage: El número de página real del libro provisto como parámetro: ${bookPage}.
    - bookId: El ID del libro provisto como parámetro: ${bookId}.
 
-Retorna únicamente el arreglo JSON de objetos que cumplan con esta estructura.`;
+Devuelve la respuesta en formato JSON encerrado en un bloque de código markdown \`\`\`json
+{
+  "inserts": [
+    {
+      "title": "...",
+      "page": "...",
+      "skill": "...",
+      "bookPage": ${bookPage},
+      "bookId": ${bookId}
+    }
+  ]
 }
+\`\`\`. No agregues explicaciones adicionales fuera de este bloque.`;
+}
+

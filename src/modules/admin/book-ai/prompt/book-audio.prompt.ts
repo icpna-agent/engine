@@ -19,5 +19,19 @@ Reglas de extracción detalladas:
 4. bookPage: El número de página real del libro provisto por parámetro: ${bookPage}.
 5. bookId: El ID del libro provisto por parámetro: ${bookId}.
 
-Retorna únicamente el objeto JSON que cumpla con esta estructura.`;
+Devuelve la respuesta en formato JSON encerrado en un bloque de código markdown \`\`\`json
+{
+  "inserts": [
+    {
+      "url": "https://example.com/placeholder-audio.mp3",
+      "audioIndex": "...",
+      "transcription": "...",
+      "bookPage": ${bookPage},
+      "bookId": ${bookId}
+    }
+  ]
 }
+\`\`\`. No agregues explicaciones adicionales fuera de este bloque.`;
+}
+
+

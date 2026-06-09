@@ -17,7 +17,7 @@ export const bookPanel = pgTable(
     theme: text("theme"),
     subTheme: text("sub_theme"),
     instruction: text("instruction"),
-    content: jsonb("content").$type<Record<string, unknown>>(),
+    content: text("content"),
     bookPage: integer("book_page").notNull(),
     bookId: integer("book_id")
       .notNull()
