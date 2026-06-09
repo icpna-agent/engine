@@ -40,7 +40,6 @@ export class AgentEngineController {
     @Res() res: Response,
   ): Promise<NodeResponse> {
     res.status(HttpStatus.OK).send("EVENT_RECEIVED");
-    console.log(JSON.stringify(meta, null, 2));
     console.log("✅ Mensaje ha llegado correctamente");
     return this.agentEngineService.runFlowProduction(meta);
   }

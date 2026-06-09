@@ -16,19 +16,18 @@ export class ProcessMessagesService {
 
     let text = "";
     let type = "text";
-    let media: MessageMedia | null = null;
+    let media: MessageMedia;
 
     const messageType = extractMessageType(entry);
 
     switch (messageType) {
       case "audio":
         type = "audio";
-        text = "[Mensaje de Voz]";
         media = extractAudioData(entry);
         break;
       case "image":
         type = "image";
-        text = extractImageCaption(entry) || "[Imagen]";
+        text = extractImageCaption(entry) || "";
         media = extractImageData(entry);
         break;
       default:
