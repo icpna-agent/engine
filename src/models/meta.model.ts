@@ -23,12 +23,20 @@ export interface Meta {
           from?: string
           id?: string
           timestamp?: string
-          type?: "image" | "reaction" | "sticker" | "document" | "text"
+          type?: "image" | "reaction" | "sticker" | "document" | "text" | "audio"
           image?: {
             caption?: string
             mime_type?: string
             sha256?: string
             id?: string
+            url?: string
+          }
+          audio?: {
+            mime_type?: string
+            sha256?: string
+            id?: string
+            url?: string
+            voice?: boolean
           }
           reaction?: {
             message_id?: string

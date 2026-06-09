@@ -29,6 +29,59 @@ function toCamelCase(str: string): string {
     .replace(/[^a-zA-Z0-9]/g, '');
 }
 
+interface Param {
+  placeholder: string;
+  name: string;
+  isQuery: boolean;
+  type: string;
+}
+
+function parseEndpointParams(endpoint: string): { cleanEndpoint: string, params: Param[] } {
+  const params: Param[] = [];
+  let cleanEndpoint = endpoint;
+
+  const placeholderRegex = /{{([a-zA-Z0-9_-]+)}}|<([a-zA-Z0-9_-]+)>/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = placeholderRegex.exec(endpoint)) !== null) {
+    const rawPlaceholder = match[0];
+    const keyName = match[1] || match[2];
+
+    if (['Version', 'Phone-Number-ID', 'WABA-ID', 'Recipient-Phone-Number'].includes(keyName)) {
+      continue;
+    }
+
+    const name = toCamelCase(keyName);
+    const isQuery = endpoint.indexOf('?' + rawPlaceholder) !== -1 ||
+                    endpoint.indexOf('&' + rawPlaceholder) !== -1 ||
+                    endpoint.indexOf('=' + rawPlaceholder) !== -1;
+    
+    let type = 'string';
+    if (keyName.toUpperCase().includes('LENGTH') || keyName.toUpperCase().includes('SIZE')) {
+      type = 'number';
+    }
+
+    params.push({
+      placeholder: rawPlaceholder,
+      name,
+      isQuery,
+      type
+    });
+  }
+
+  const sortedParams = [...params].sort((a, b) => b.placeholder.length - a.placeholder.length);
+
+  for (const p of sortedParams) {
+    if (p.name === 'phoneNumberId') {
+      cleanEndpoint = cleanEndpoint.split(p.placeholder).join(`\${phoneNumberId || this.config.phoneNumberId || ""}`);
+    } else {
+      cleanEndpoint = cleanEndpoint.split(p.placeholder).join(`\${${p.name}}`);
+    }
+  }
+
+  return { cleanEndpoint, params };
+}
+
 // Helper: Infiere los tipos (Ahora usando 'unknown' en vez de 'any' para máxima rigurosidad)
 function inferType(value: any, key: string, indent: string = "  "): string {
   if (typeof value === 'string') {
@@ -131,6 +184,40 @@ try {
     endpoint = endpoint.replace(/{{WABA-ID}}/gi, '${this.config.wabaId}');
     endpoint = endpoint.replace(/{{Recipient-Phone-Number}}/gi, '${phoneNumber}'); 
 
+    // Extraer parámetros de la URL
+    const { cleanEndpoint, params } = parseEndpointParams(endpoint);
+    
+    // Identificar si tiene payload / datos de entrada en el cuerpo
+    let hasBodyPayload = false;
+    if (req.request?.body?.mode === 'formdata' && req.request?.body?.formdata && method !== 'GET') {
+      hasBodyPayload = true;
+    } else if (req.request?.body?.raw && method !== 'GET') {
+      try {
+        JSON.parse(req.request.body.raw);
+        hasBodyPayload = true;
+      } catch (e) {}
+    }
+
+    // Construir la lista de argumentos para el método de TS
+    const methodArgsList: string[] = [];
+    
+    // 1. Añadimos primero los parámetros obligatorios del Path (no opcionales)
+    params.filter(p => !p.isQuery).forEach(p => {
+      methodArgsList.push(`${p.name}: ${p.type}`);
+    });
+    
+    // 2. Añadimos el argumento 'data' si tiene cuerpo
+    if (hasBodyPayload) {
+      methodArgsList.push(`data: ${payloadTypeName}`);
+    }
+
+    // 3. Añadimos los parámetros opcionales del Query String
+    params.filter(p => p.isQuery).forEach(p => {
+      methodArgsList.push(`${p.name}?: ${p.type}`);
+    });
+
+    const methodArgs = methodArgsList.join(', ');
+
     // Generamos las Interfaces del Payload y los Métodos
     if (req.request?.body?.mode === 'formdata' && req.request?.body?.formdata && method !== 'GET') {
       const formDataKeys = req.request.body.formdata.map(fd => {
@@ -146,14 +233,14 @@ try {
    * @method ${method}
    * @formData
    */
-  async ${methodName}(data: ${payloadTypeName}): Promise<${responseTypeName}> {
+  async ${methodName}(${methodArgs}): Promise<${responseTypeName}> {
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
       if (!key.startsWith('_') && value !== undefined) {
         formData.append(key, value as any);
       }
     });
-    return this.requestFormData<${responseTypeName}>(\`${endpoint}\`, '${method}', formData);
+    return this.requestFormData<${responseTypeName}>(\`${cleanEndpoint}\`, '${method}', formData);
   }\n`;
     } else if (req.request?.body?.raw && method !== 'GET') {
       try {
@@ -177,14 +264,14 @@ try {
    * @method ${method}
    * @formData (auto-detected from @ syntax)
    */
-  async ${methodName}(data: ${payloadTypeName}): Promise<${responseTypeName}> {
+  async ${methodName}(${methodArgs}): Promise<${responseTypeName}> {
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
       if (!key.startsWith('_') && value !== undefined) {
         formData.append(key, value as any);
       }
     });
-    return this.requestFormData<${responseTypeName}>(\`${endpoint}\`, '${method}', formData);
+    return this.requestFormData<${responseTypeName}>(\`${cleanEndpoint}\`, '${method}', formData);
   }\n`;
         } else {
           interfacesCode += `export type ${payloadTypeName} = ${inferType(payload, '', '')} & WbMetadata;\n\n`;
@@ -197,8 +284,8 @@ try {
    * ${req.name}
    * @method ${method}
    */
-  async ${methodName}(data: ${payloadTypeName}): Promise<${responseTypeName}> {
-    return this.request<${responseTypeName}>(\`${endpoint}\`, '${method}', data);
+  async ${methodName}(${methodArgs}): Promise<${responseTypeName}> {
+    return this.request<${responseTypeName}>(\`${cleanEndpoint}\`, '${method}', data);
   }\n`;
         }
       } catch (e) {}
@@ -208,8 +295,8 @@ try {
    * ${req.name}
    * @method ${method}
    */
-  async ${methodName}(): Promise<${responseTypeName}> {
-    return this.request<${responseTypeName}>(\`${endpoint}\`, '${method}');
+  async ${methodName}(${methodArgs}): Promise<${responseTypeName}> {
+    return this.request<${responseTypeName}>(\`${cleanEndpoint}\`, '${method}');
   }\n`;
     }
   });
@@ -270,6 +357,21 @@ export class WhatsAppClient {
       throw new Error(data.error?.message || \`Error HTTP \${response.status}\`);
     }
     return data as T;
+  }
+
+  async downloadMediaByUrl(url: string): Promise<Buffer> {
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': \`Bearer \${this.config.accessToken}\`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(\`Failed to download Meta media: \${response.status} \${response.statusText}\`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
   }
 ${classMethodsCode}
 }

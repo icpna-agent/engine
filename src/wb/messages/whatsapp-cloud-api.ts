@@ -2659,6 +2659,21 @@ export class WhatsAppClient {
     return data as T;
   }
 
+  async downloadMediaByUrl(url: string): Promise<Buffer> {
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${this.config.accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to download Meta media: ${response.status} ${response.statusText}`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  }
+
   /**
    * Subscribe to your WABA
    * @method POST
@@ -2695,8 +2710,8 @@ export class WhatsAppClient {
    * Debug Access Token
    * @method GET
    */
-  async debugAccessToken(): Promise<unknown> {
-    return this.request<unknown>(`/${this.config.version || "v20.0"}/debug_token?input_token={{User-Access-Token}}`, 'GET');
+  async debugAccessToken(userAccessToken?: string): Promise<unknown> {
+    return this.request<unknown>(`/${this.config.version || "v20.0"}/debug_token?input_token=${userAccessToken}`, 'GET');
   }
 
   /**
@@ -2711,16 +2726,16 @@ export class WhatsAppClient {
    * Get owned WABAs
    * @method GET
    */
-  async getOwnedWabas(): Promise<GetOwnedWabasResponse> {
-    return this.request<GetOwnedWabasResponse>(`/${this.config.version || "v20.0"}/{{Business-ID}}/owned_whatsapp_business_accounts`, 'GET');
+  async getOwnedWabas(businessId: string): Promise<GetOwnedWabasResponse> {
+    return this.request<GetOwnedWabasResponse>(`/${this.config.version || "v20.0"}/${businessId}/owned_whatsapp_business_accounts`, 'GET');
   }
 
   /**
    * Get shared WABAs
    * @method GET
    */
-  async getSharedWabas(): Promise<GetSharedWabasResponse> {
-    return this.request<GetSharedWabasResponse>(`/${this.config.version || "v20.0"}/{{Business-ID}}/client_whatsapp_business_accounts`, 'GET');
+  async getSharedWabas(businessId: string): Promise<GetSharedWabasResponse> {
+    return this.request<GetSharedWabasResponse>(`/${this.config.version || "v20.0"}/${businessId}/client_whatsapp_business_accounts`, 'GET');
   }
 
   /**
@@ -3143,16 +3158,16 @@ export class WhatsAppClient {
    * Get template by ID (default fields)
    * @method GET
    */
-  async getTemplateByIdDefaultFields(): Promise<GetTemplateByIdDefaultFieldsResponse> {
-    return this.request<GetTemplateByIdDefaultFieldsResponse>(`/${this.config.version || "v20.0"}/<TEMPLATE_ID>`, 'GET');
+  async getTemplateByIdDefaultFields(templateId: string): Promise<GetTemplateByIdDefaultFieldsResponse> {
+    return this.request<GetTemplateByIdDefaultFieldsResponse>(`/${this.config.version || "v20.0"}/${templateId}`, 'GET');
   }
 
   /**
    * Get template by name (default fields)
    * @method GET
    */
-  async getTemplateByNameDefaultFields(): Promise<GetTemplateByNameDefaultFieldsResponse> {
-    return this.request<GetTemplateByNameDefaultFieldsResponse>(`/${this.config.version || "v20.0"}/${this.config.wabaId}/message_templates?name=<TEMPLATE_NAME>`, 'GET');
+  async getTemplateByNameDefaultFields(templateName?: string): Promise<GetTemplateByNameDefaultFieldsResponse> {
+    return this.request<GetTemplateByNameDefaultFieldsResponse>(`/${this.config.version || "v20.0"}/${this.config.wabaId}/message_templates?name=${templateName}`, 'GET');
   }
 
   /**
@@ -3239,24 +3254,24 @@ export class WhatsAppClient {
    * Edit template
    * @method POST
    */
-  async editTemplate(data: EditTemplatePayload): Promise<EditTemplateResponse> {
-    return this.request<EditTemplateResponse>(`/${this.config.version || "v20.0"}/<TEMPLATE_ID>`, 'POST', data);
+  async editTemplate(templateId: string, data: EditTemplatePayload): Promise<EditTemplateResponse> {
+    return this.request<EditTemplateResponse>(`/${this.config.version || "v20.0"}/${templateId}`, 'POST', data);
   }
 
   /**
    * Delete template by name
    * @method DELETE
    */
-  async deleteTemplateByName(): Promise<DeleteTemplateByNameResponse> {
-    return this.request<DeleteTemplateByNameResponse>(`/${this.config.version || "v20.0"}/${this.config.wabaId}/message_templates?name=<TEMPLATE_NAME>`, 'DELETE');
+  async deleteTemplateByName(templateName?: string): Promise<DeleteTemplateByNameResponse> {
+    return this.request<DeleteTemplateByNameResponse>(`/${this.config.version || "v20.0"}/${this.config.wabaId}/message_templates?name=${templateName}`, 'DELETE');
   }
 
   /**
    * Delete template by ID
    * @method DELETE
    */
-  async deleteTemplateById(): Promise<DeleteTemplateByIdResponse> {
-    return this.request<DeleteTemplateByIdResponse>(`/${this.config.version || "v20.0"}/${this.config.wabaId}/message_templates?hsm_id=<HSM_ID>&name=<NAME>`, 'DELETE');
+  async deleteTemplateById(hsmId?: string, name?: string): Promise<DeleteTemplateByIdResponse> {
+    return this.request<DeleteTemplateByIdResponse>(`/${this.config.version || "v20.0"}/${this.config.wabaId}/message_templates?hsm_id=${hsmId}&name=${name}`, 'DELETE');
   }
 
   /**
@@ -3293,16 +3308,16 @@ export class WhatsAppClient {
    * Get Flow
    * @method GET
    */
-  async getFlow(): Promise<GetFlowResponse> {
-    return this.request<GetFlowResponse>(`/${this.config.version || "v20.0"}/{{Flow-ID}}?fields=id,name,categories,preview,status,validation_errors,json_version,data_api_version,data_channel_uri,health_status,whatsapp_business_account,application`, 'GET');
+  async getFlow(flowId: string): Promise<GetFlowResponse> {
+    return this.request<GetFlowResponse>(`/${this.config.version || "v20.0"}/${flowId}?fields=id,name,categories,preview,status,validation_errors,json_version,data_api_version,data_channel_uri,health_status,whatsapp_business_account,application`, 'GET');
   }
 
   /**
    * Get Preview URL
    * @method GET
    */
-  async getPreviewUrl(): Promise<GetPreviewUrlResponse> {
-    return this.request<GetPreviewUrlResponse>(`/${this.config.version || "v20.0"}/{{Flow-ID}}?fields=preview.invalidate(false)`, 'GET');
+  async getPreviewUrl(flowId: string): Promise<GetPreviewUrlResponse> {
+    return this.request<GetPreviewUrlResponse>(`/${this.config.version || "v20.0"}/${flowId}?fields=preview.invalidate(false)`, 'GET');
   }
 
   /**
@@ -3318,22 +3333,22 @@ export class WhatsAppClient {
    * @method POST
    * @formData
    */
-  async updateFlowJson(data: UpdateFlowJsonPayload): Promise<UpdateFlowJsonResponse> {
+  async updateFlowJson(flowId: string, data: UpdateFlowJsonPayload): Promise<UpdateFlowJsonResponse> {
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
       if (!key.startsWith('_') && value !== undefined) {
         formData.append(key, value as any);
       }
     });
-    return this.requestFormData<UpdateFlowJsonResponse>(`/${this.config.version || "v20.0"}/{{Flow-ID}}/assets`, 'POST', formData);
+    return this.requestFormData<UpdateFlowJsonResponse>(`/${this.config.version || "v20.0"}/${flowId}/assets`, 'POST', formData);
   }
 
   /**
    * Publish Flow
    * @method POST
    */
-  async publishFlow(): Promise<PublishFlowResponse> {
-    return this.request<PublishFlowResponse>(`/${this.config.version || "v20.0"}/{{Flow-ID}}/publish`, 'POST');
+  async publishFlow(flowId: string): Promise<PublishFlowResponse> {
+    return this.request<PublishFlowResponse>(`/${this.config.version || "v20.0"}/${flowId}/publish`, 'POST');
   }
 
   /**
@@ -3341,38 +3356,38 @@ export class WhatsAppClient {
    * @method POST
    * @formData
    */
-  async updateFlowMetadata(data: UpdateFlowMetadataPayload): Promise<UpdateFlowMetadataResponse> {
+  async updateFlowMetadata(flowId: string, data: UpdateFlowMetadataPayload): Promise<UpdateFlowMetadataResponse> {
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
       if (!key.startsWith('_') && value !== undefined) {
         formData.append(key, value as any);
       }
     });
-    return this.requestFormData<UpdateFlowMetadataResponse>(`/${this.config.version || "v20.0"}/{{Flow-ID}}`, 'POST', formData);
+    return this.requestFormData<UpdateFlowMetadataResponse>(`/${this.config.version || "v20.0"}/${flowId}`, 'POST', formData);
   }
 
   /**
    * List Assets (Get Flow JSON URL)
    * @method GET
    */
-  async listAssetsGetFlowJsonUrl(): Promise<ListAssetsGetFlowJsonUrlResponse> {
-    return this.request<ListAssetsGetFlowJsonUrlResponse>(`/${this.config.version || "v20.0"}/{{Flow-ID}}/assets`, 'GET');
+  async listAssetsGetFlowJsonUrl(flowId: string): Promise<ListAssetsGetFlowJsonUrlResponse> {
+    return this.request<ListAssetsGetFlowJsonUrlResponse>(`/${this.config.version || "v20.0"}/${flowId}/assets`, 'GET');
   }
 
   /**
    * Deprecate Flow
    * @method POST
    */
-  async deprecateFlow(): Promise<DeprecateFlowResponse> {
-    return this.request<DeprecateFlowResponse>(`/${this.config.version || "v20.0"}/{{Flow-ID}}/deprecate`, 'POST');
+  async deprecateFlow(flowId: string): Promise<DeprecateFlowResponse> {
+    return this.request<DeprecateFlowResponse>(`/${this.config.version || "v20.0"}/${flowId}/deprecate`, 'POST');
   }
 
   /**
    * Delete Flow
    * @method DELETE
    */
-  async deleteFlow(): Promise<DeleteFlowResponse> {
-    return this.request<DeleteFlowResponse>(`/${this.config.version || "v20.0"}/{{Flow-ID}}`, 'DELETE');
+  async deleteFlow(flowId: string): Promise<DeleteFlowResponse> {
+    return this.request<DeleteFlowResponse>(`/${this.config.version || "v20.0"}/${flowId}`, 'DELETE');
   }
 
   /**
@@ -3466,40 +3481,40 @@ export class WhatsAppClient {
    * Get Endpoint Request Count Metric
    * @method GET
    */
-  async getEndpointRequestCountMetric(): Promise<GetEndpointRequestCountMetricResponse> {
-    return this.request<GetEndpointRequestCountMetricResponse>(`/${this.config.version || "v20.0"}/{{Flow-ID}}?fields=metric.name(ENDPOINT_REQUEST_COUNT).granularity(DAY).since(2024-01-28).until(2024-01-30)`, 'GET');
+  async getEndpointRequestCountMetric(flowId: string): Promise<GetEndpointRequestCountMetricResponse> {
+    return this.request<GetEndpointRequestCountMetricResponse>(`/${this.config.version || "v20.0"}/${flowId}?fields=metric.name(ENDPOINT_REQUEST_COUNT).granularity(DAY).since(2024-01-28).until(2024-01-30)`, 'GET');
   }
 
   /**
    * Get Endpoint Request Error Metric
    * @method GET
    */
-  async getEndpointRequestErrorMetric(): Promise<GetEndpointRequestErrorMetricResponse> {
-    return this.request<GetEndpointRequestErrorMetricResponse>(`/${this.config.version || "v20.0"}/{{Flow-ID}}?fields=metric.name(ENDPOINT_REQUEST_ERROR).granularity(DAY).since(2024-01-28).until(2024-01-30)`, 'GET');
+  async getEndpointRequestErrorMetric(flowId: string): Promise<GetEndpointRequestErrorMetricResponse> {
+    return this.request<GetEndpointRequestErrorMetricResponse>(`/${this.config.version || "v20.0"}/${flowId}?fields=metric.name(ENDPOINT_REQUEST_ERROR).granularity(DAY).since(2024-01-28).until(2024-01-30)`, 'GET');
   }
 
   /**
    * Get Endpoint Request Error Rate Metric
    * @method GET
    */
-  async getEndpointRequestErrorRateMetric(): Promise<GetEndpointRequestErrorRateMetricResponse> {
-    return this.request<GetEndpointRequestErrorRateMetricResponse>(`/${this.config.version || "v20.0"}/{{Flow-ID}}?fields=metric.name(ENDPOINT_REQUEST_ERROR_RATE).granularity(LIFETIME).since(2024-01-28).until(2024-01-30)`, 'GET');
+  async getEndpointRequestErrorRateMetric(flowId: string): Promise<GetEndpointRequestErrorRateMetricResponse> {
+    return this.request<GetEndpointRequestErrorRateMetricResponse>(`/${this.config.version || "v20.0"}/${flowId}?fields=metric.name(ENDPOINT_REQUEST_ERROR_RATE).granularity(LIFETIME).since(2024-01-28).until(2024-01-30)`, 'GET');
   }
 
   /**
    * Get Endpoint Request Latencies Metric
    * @method GET
    */
-  async getEndpointRequestLatenciesMetric(): Promise<GetEndpointRequestLatenciesMetricResponse> {
-    return this.request<GetEndpointRequestLatenciesMetricResponse>(`/${this.config.version || "v20.0"}/{{Flow-ID}}?fields=metric.name(ENDPOINT_REQUEST_LATENCY_SECONDS_CEIL).granularity(DAY).since(2024-01-28).until(2024-01-30)`, 'GET');
+  async getEndpointRequestLatenciesMetric(flowId: string): Promise<GetEndpointRequestLatenciesMetricResponse> {
+    return this.request<GetEndpointRequestLatenciesMetricResponse>(`/${this.config.version || "v20.0"}/${flowId}?fields=metric.name(ENDPOINT_REQUEST_LATENCY_SECONDS_CEIL).granularity(DAY).since(2024-01-28).until(2024-01-30)`, 'GET');
   }
 
   /**
    * Get Endpoint Availability Metric
    * @method GET
    */
-  async getEndpointAvailabilityMetric(): Promise<GetEndpointAvailabilityMetricResponse> {
-    return this.request<GetEndpointAvailabilityMetricResponse>(`/${this.config.version || "v20.0"}/{{Flow-ID}}?fields=metric.name(ENDPOINT_AVAILABILITY).granularity(DAY).since(2024-01-28).until(2024-01-30)`, 'GET');
+  async getEndpointAvailabilityMetric(flowId: string): Promise<GetEndpointAvailabilityMetricResponse> {
+    return this.request<GetEndpointAvailabilityMetricResponse>(`/${this.config.version || "v20.0"}/${flowId}?fields=metric.name(ENDPOINT_AVAILABILITY).granularity(DAY).since(2024-01-28).until(2024-01-30)`, 'GET');
   }
 
   /**
@@ -3551,8 +3566,8 @@ export class WhatsAppClient {
    * Retrieve Media URL
    * @method GET
    */
-  async retrieveMediaUrl(): Promise<RetrieveMediaUrlResponse> {
-    return this.request<RetrieveMediaUrlResponse>(`/${this.config.version || "v20.0"}/{{Media-ID}}?phone_number_id=<PHONE_NUMBER_ID>`, 'GET');
+  async retrieveMediaUrl(mediaId: string, phoneNumberId?: string): Promise<RetrieveMediaUrlResponse> {
+    return this.request<RetrieveMediaUrlResponse>(`/${this.config.version || "v20.0"}/${mediaId}?phone_number_id=${phoneNumberId || this.config.phoneNumberId || ""}`, 'GET');
   }
 
   /**
@@ -3560,22 +3575,22 @@ export class WhatsAppClient {
    * @method DELETE
    * @formData
    */
-  async deleteMedia(data: DeleteMediaPayload): Promise<DeleteMediaResponse> {
+  async deleteMedia(mediaId: string, data: DeleteMediaPayload, phoneNumberId?: string): Promise<DeleteMediaResponse> {
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
       if (!key.startsWith('_') && value !== undefined) {
         formData.append(key, value as any);
       }
     });
-    return this.requestFormData<DeleteMediaResponse>(`/${this.config.version || "v20.0"}/{{Media-ID}}/?phone_number_id=<PHONE_NUMBER_ID>`, 'DELETE', formData);
+    return this.requestFormData<DeleteMediaResponse>(`/${this.config.version || "v20.0"}/${mediaId}/?phone_number_id=${phoneNumberId || this.config.phoneNumberId || ""}`, 'DELETE', formData);
   }
 
   /**
    * Download Media
    * @method GET
    */
-  async downloadMedia(): Promise<unknown> {
-    return this.request<unknown>(`/${this.config.version || "v20.0"}/{{Media-URL}}`, 'GET');
+  async downloadMedia(mediaUrl: string): Promise<unknown> {
+    return this.request<unknown>(`/${this.config.version || "v20.0"}/${mediaUrl}`, 'GET');
   }
 
   /**
@@ -3590,24 +3605,24 @@ export class WhatsAppClient {
    * Resumable Upload - Create an Upload Session
    * @method POST
    */
-  async resumableUploadCreateAnUploadSession(): Promise<ResumableUploadCreateAnUploadSessionResponse> {
-    return this.request<ResumableUploadCreateAnUploadSessionResponse>(`/${this.config.version || "v20.0"}/app/uploads/?file_length=<YOUR_FILE_LENGTH>&file_type=image/jpeg&file_name=myprofile.jpg`, 'POST');
+  async resumableUploadCreateAnUploadSession(yourFileLength?: number): Promise<ResumableUploadCreateAnUploadSessionResponse> {
+    return this.request<ResumableUploadCreateAnUploadSessionResponse>(`/${this.config.version || "v20.0"}/app/uploads/?file_length=${yourFileLength}&file_type=image/jpeg&file_name=myprofile.jpg`, 'POST');
   }
 
   /**
    * Resumable Upload - Upload File Data
    * @method POST
    */
-  async resumableUploadUploadFileData(): Promise<ResumableUploadUploadFileDataResponse> {
-    return this.request<ResumableUploadUploadFileDataResponse>(`/${this.config.version || "v20.0"}/{{Upload-ID}}`, 'POST');
+  async resumableUploadUploadFileData(uploadId: string): Promise<ResumableUploadUploadFileDataResponse> {
+    return this.request<ResumableUploadUploadFileDataResponse>(`/${this.config.version || "v20.0"}/${uploadId}`, 'POST');
   }
 
   /**
    * Resumable Upload - Query File Upload Status
    * @method GET
    */
-  async resumableUploadQueryFileUploadStatus(): Promise<ResumableUploadQueryFileUploadStatusResponse> {
-    return this.request<ResumableUploadQueryFileUploadStatusResponse>(`/${this.config.version || "v20.0"}/{{Upload-ID}}`, 'GET');
+  async resumableUploadQueryFileUploadStatus(uploadId: string): Promise<ResumableUploadQueryFileUploadStatusResponse> {
+    return this.request<ResumableUploadQueryFileUploadStatusResponse>(`/${this.config.version || "v20.0"}/${uploadId}`, 'GET');
   }
 
   /**
@@ -3662,8 +3677,8 @@ export class WhatsAppClient {
    * Get QR code
    * @method GET
    */
-  async getQrCode(): Promise<GetQrCodeResponse> {
-    return this.request<GetQrCodeResponse>(`/${this.config.version || "v20.0"}/${this.config.phoneNumberId}/message_qrdls/<QR_CODE_ID>`, 'GET');
+  async getQrCode(qrCodeId: string): Promise<GetQrCodeResponse> {
+    return this.request<GetQrCodeResponse>(`/${this.config.version || "v20.0"}/${this.config.phoneNumberId}/message_qrdls/${qrCodeId}`, 'GET');
   }
 
   /**
@@ -3686,16 +3701,16 @@ export class WhatsAppClient {
    * Get QR code SVG image URL
    * @method GET
    */
-  async getQrCodeSvgImageUrl(): Promise<GetQrCodeSvgImageUrlResponse> {
-    return this.request<GetQrCodeSvgImageUrlResponse>(`/${this.config.version || "v20.0"}/${this.config.phoneNumberId}/message_qrdls?fields=prefilled_message,deep_link_url,qr_image_url.format(SVG)&code=<QR_CODE_ID>`, 'GET');
+  async getQrCodeSvgImageUrl(qrCodeId?: string): Promise<GetQrCodeSvgImageUrlResponse> {
+    return this.request<GetQrCodeSvgImageUrlResponse>(`/${this.config.version || "v20.0"}/${this.config.phoneNumberId}/message_qrdls?fields=prefilled_message,deep_link_url,qr_image_url.format(SVG)&code=${qrCodeId}`, 'GET');
   }
 
   /**
    * Get QR code PNG image URL
    * @method GET
    */
-  async getQrCodePngImageUrl(): Promise<GetQrCodePngImageUrlResponse> {
-    return this.request<GetQrCodePngImageUrlResponse>(`/${this.config.version || "v20.0"}/${this.config.phoneNumberId}/message_qrdls?fields=prefilled_message,deep_link_url,qr_image_url.format(PNG)&code=<QR_CODE_ID>`, 'GET');
+  async getQrCodePngImageUrl(qrCodeId?: string): Promise<GetQrCodePngImageUrlResponse> {
+    return this.request<GetQrCodePngImageUrlResponse>(`/${this.config.version || "v20.0"}/${this.config.phoneNumberId}/message_qrdls?fields=prefilled_message,deep_link_url,qr_image_url.format(PNG)&code=${qrCodeId}`, 'GET');
   }
 
   /**
@@ -3718,16 +3733,16 @@ export class WhatsAppClient {
    * Delete QR code
    * @method DELETE
    */
-  async deleteQrCode(): Promise<DeleteQrCodeResponse> {
-    return this.request<DeleteQrCodeResponse>(`/${this.config.version || "v20.0"}/${this.config.phoneNumberId}/message_qrdls/<QR_CODE_ID>`, 'DELETE');
+  async deleteQrCode(qrCodeId: string): Promise<DeleteQrCodeResponse> {
+    return this.request<DeleteQrCodeResponse>(`/${this.config.version || "v20.0"}/${this.config.phoneNumberId}/message_qrdls/${qrCodeId}`, 'DELETE');
   }
 
   /**
    * Get Business Portfolio (Specific Fields)
    * @method GET
    */
-  async getBusinessPortfolioSpecificFields(): Promise<GetBusinessPortfolioSpecificFieldsResponse> {
-    return this.request<GetBusinessPortfolioSpecificFieldsResponse>(`/${this.config.version || "v20.0"}/{{Business-ID}}?fields=id,name,timezone_id`, 'GET');
+  async getBusinessPortfolioSpecificFields(businessId: string): Promise<GetBusinessPortfolioSpecificFieldsResponse> {
+    return this.request<GetBusinessPortfolioSpecificFieldsResponse>(`/${this.config.version || "v20.0"}/${businessId}?fields=id,name,timezone_id`, 'GET');
   }
 
   /**
@@ -3750,8 +3765,8 @@ export class WhatsAppClient {
    * Get credit lines
    * @method GET
    */
-  async getCreditLines(): Promise<GetCreditLinesResponse> {
-    return this.request<GetCreditLinesResponse>(`/${this.config.version || "v20.0"}/{{Business-ID}}/extendedcredits`, 'GET');
+  async getCreditLines(businessId: string): Promise<GetCreditLinesResponse> {
+    return this.request<GetCreditLinesResponse>(`/${this.config.version || "v20.0"}/${businessId}/extendedcredits`, 'GET');
   }
 
   /**

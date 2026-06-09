@@ -2,7 +2,8 @@ import { Injectable } from "@nestjs/common";
 import { Context } from "@models/agent.model";
 import { MessageRepository } from "@repositories/message.repository";
 
-import { extractMessageId, extractTextBody } from "@functions/meta.function";
+import { extractMessageId, extractTextBody, extractMessageType, extractAudioData, extractImageData, extractImageCaption } from "@functions/meta.function";
+import { MessageMedia } from "@db/tables/message.table";
 
 @Injectable()
 export class ProcessMessagesService {
@@ -10,15 +11,38 @@ export class ProcessMessagesService {
 
   async process(context: Context): Promise<Context> {
     const chatId = context.payload.chat.id;
-    const messageId = extractMessageId(context.payload.entry);
-    const text = extractTextBody(context.payload.entry) || "";
+    const entry = context.payload.entry;
+    const messageId = extractMessageId(entry);
+
+    let text = "";
+    let type = "text";
+    let media: MessageMedia | null = null;
+
+    const messageType = extractMessageType(entry);
+
+    switch (messageType) {
+      case "audio":
+        type = "audio";
+        text = "[Mensaje de Voz]";
+        media = extractAudioData(entry);
+        break;
+      case "image":
+        type = "image";
+        text = extractImageCaption(entry) || "[Imagen]";
+        media = extractImageData(entry);
+        break;
+      default:
+        text = extractTextBody(entry) || "";
+        break;
+    }
 
     await this.messageRepository.create({
       chat_id: chatId,
       code: messageId,
       role: "user",
       text: text,
-      type: "text",
+      type: type,
+      media: media || undefined,
     });
 
     const messages = await this.messageRepository.findByChatIdWithLimit(

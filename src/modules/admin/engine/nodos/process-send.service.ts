@@ -11,6 +11,8 @@ import {
 } from "src/wb/messages/whatsapp-cloud-api";
 
 import { MessageRepository } from "@repositories/message.repository";
+import { MessageMedia } from "@db/tables/message.table";
+import { extractMessageId } from "@functions/meta.function";
 
 @Injectable()
 export class ProcessSendService {
@@ -91,62 +93,68 @@ export class ProcessSendService {
     const templates: WhatsAppCloudMessage[] = context.result?.templates || [];
 
     for (const template of templates) {
+      let mediaData: MessageMedia | null = null;
       let textContent = "";
       let type = "text";
 
       // 1. Identificar el contenido y tipo para la base de datos
-      if (isSendTextMessagePayload(template)) {
-        textContent = template.text.body;
-        type = "text";
-      } else if (
-        isSendImageMessageByUrlPayload(template) ||
-        isSendImageMessageByIdPayload(template)
-      ) {
-        textContent = "[Imagen]";
-        type = "image";
-      } else if (
-        isSendAudioMessageByUrlPayload(template) ||
-        isSendAudioMessageByIdPayload(template)
-      ) {
-        textContent = "[Mensaje de Audio]";
-        type = "audio";
+      const templateType = "type" in template ? template.type : undefined;
+      switch (templateType) {
+        case "text":
+          if (isSendTextMessagePayload(template)) {
+            textContent = template.text.body;
+            type = "text";
+          }
+          break;
+        case "image":
+          textContent = "";
+          type = "image";
+          if (isSendImageMessageByUrlPayload(template)) {
+            mediaData = {
+              id: "",
+              url: template.image.link,
+              mimeType: "image/jpeg",
+            };
+          } else if (isSendImageMessageByIdPayload(template)) {
+            mediaData = {
+              id: template.image.id,
+              url: "",
+              mimeType: "image/jpeg",
+            };
+          }
+          break;
+        case "audio":
+          textContent = "";
+          type = "audio";
+          if (isSendAudioMessageByUrlPayload(template)) {
+            mediaData = {
+              id: "",
+              url: template.audio.link,
+              mimeType: "audio/mpeg",
+            };
+          } else if (isSendAudioMessageByIdPayload(template)) {
+            mediaData = {
+              id: template.audio.id,
+              url: "",
+              mimeType: "audio/mpeg",
+            };
+          }
+          break;
       }
 
       // 2. Guardar en la base de datos
       const chatId = context.payload.chat?.id;
+      const code = extractMessageId(context.payload.entry);
+      
       if (chatId) {
         await this.messageRepository.create({
           chat_id: chatId,
-          code: `AI-${Date.now()}`,
+          code: code,
           role: "assistant",
           text: textContent,
           type: type,
-          media: type !== "text" ? template : null,
+          media: mediaData,
         });
-      }
-
-      // 3. Enviar por WhatsApp si no ha sido enviado aún
-      if (template._sent) {
-        console.log(
-          "El mensaje ya fue enviado por una tool, saltando envío...",
-        );
-        continue;
-      }
-
-      if (isSendTextMessagePayload(template)) {
-        await api.sendTextMessage(template);
-      } else if (isSendImageMessageByUrlPayload(template)) {
-        await api.sendImageMessageByUrl(template);
-      } else if (isSendImageMessageByIdPayload(template)) {
-        await api.sendImageMessageById(template);
-      } else if (isSendAudioMessageByUrlPayload(template)) {
-        await api.sendAudioMessageByUrl(template);
-      } else if (isSendAudioMessageByIdPayload(template)) {
-        await api.sendAudioMessageById(template);
-      } else {
-        console.log(
-          "El template introducido no es tratable por los procesadores de fallback conocidos.",
-        );
       }
     }
 

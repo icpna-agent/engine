@@ -1,4 +1,5 @@
 import { Meta } from '@models/meta.model';
+import { MessageMedia } from '@db/tables/message.table';
 
 // Metadata
 export function extractPhoneNumberId(meta: Meta) {
@@ -108,6 +109,35 @@ export function isReactionMessage(meta: Meta): boolean {
 
 export function isStickerMessage(meta: Meta): boolean {
   return extractMessageType(meta) === 'sticker';
+}
+
+export function isAudioMessage(meta: Meta): boolean {
+  return extractMessageType(meta) === 'audio';
+}
+
+export function extractAudioData(meta: Meta): MessageMedia | null {
+  const message = meta?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+  if (message?.type === 'audio' && message.audio && message.audio.id && message.audio.url && message.audio.mime_type) {
+    return {
+      id: message.audio.id,
+      url: message.audio.url,
+      mimeType: message.audio.mime_type,
+    };
+  }
+  return null;
+}
+
+export function extractImageData(meta: Meta): MessageMedia | null {
+  const message = meta?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+  if (message?.type === 'image' && message.image && message.image.id && message.image.url && message.image.mime_type) {
+    return {
+      id: message.image.id,
+      url: message.image.url,
+      mimeType: message.image.mime_type,
+      caption: message.image.caption || undefined,
+    };
+  }
+  return null;
 }
 
 export function hasContext(meta: Meta): boolean {

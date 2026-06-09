@@ -8,11 +8,11 @@ import { GoogleGenAI } from "@google/genai";
 import { pcmToWav, convertWavToMp3 } from "@functions/audio.function";
 
 export const createSendAudioMessageTool = (
-  genAI: GoogleGenAI,
   accessToken: string,
   phoneNumberId: string,
   phone: string,
   templates: WhatsAppCloudMessage[],
+  genAI: GoogleGenAI,
 ) => {
   return tool(
     async ({ text }) => {
