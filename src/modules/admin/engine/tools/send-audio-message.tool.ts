@@ -85,12 +85,12 @@ export const createSendAudioMessageTool = (
     {
       name: "send_audio_message",
       description:
-        "Esta herramienta envía un mensaje de audio cálido y empático por WhatsApp al usuario.",
+        "Genera un mensaje de audio con voz humana y sintetizada a partir del texto proporcionado (Text-to-Speech) y lo envía al usuario por WhatsApp. Úsala para responder al usuario con un mensaje de voz cálido y empático.",
       schema: z.object({
         text: z
           .string()
           .describe(
-            "El texto que se convertirá en audio y se enviará por WhatsApp",
+            "El texto en español que se convertirá a voz (audio) y se enviará al usuario.",
           ),
       }),
     },

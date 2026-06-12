@@ -7,6 +7,7 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { BotModel } from '@db/tables/bot.table';
 import { Langfuse } from "langfuse";
 import { GoogleGenAI } from '@google/genai';
+import Groq from 'groq-sdk';
 
 
 @Injectable()
@@ -20,6 +21,7 @@ export class ClientService {
   private readonly openAIEmbeddings: OpenAIEmbeddings;
   private readonly langfuse: Langfuse;
   private readonly genai: GoogleGenAI;
+  private readonly groq: Groq;
 
   constructor() {
     // Initialize embedding
@@ -73,6 +75,11 @@ export class ClientService {
         }
       }
     });
+
+    // Initialize Groq
+    this.groq = new Groq({
+      apiKey: process.env.GROQ_API_KEY || '',
+    });
   }
 
   // Getters for each client
@@ -106,6 +113,10 @@ export class ClientService {
 
   getGenAI(): GoogleGenAI {
     return this.genai;
+  }
+
+  getGroq(): Groq {
+    return this.groq;
   }
 
   getLlm(model: BotModel): ChatOpenAI | ChatGoogleGenerativeAI {

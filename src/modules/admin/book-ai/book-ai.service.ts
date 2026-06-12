@@ -1,12 +1,16 @@
 import { Injectable } from "@nestjs/common";
 import { HumanMessage } from "@langchain/core/messages";
+import { GoogleGenAI } from "@google/genai";
 import { ClientService } from "src/features/client/client.service";
+import Groq from "groq-sdk";
 import { BookPreviewDto } from "./dto/book-preview.dto";
+import { AudioTranscriptDto } from "./dto/audio-transcript.dto";
 import { BookIndexCreateDto } from "../book/dto/book-index/book-index-create.dto";
 import { BookUnitCreateDto } from "../book/dto/book-unit/book-unit-create.dto";
 import { BookLessonCreateDto } from "../book/dto/book-lesson/book-lesson-create.dto";
 import { BookPanelCreateDto } from "../book/dto/book-panel/book-panel-create.dto";
 import { BookAudioCreateDto } from "../book/dto/book-audio/book-audio-create.dto";
+
 
 // Importación de esquemas Zod
 import { bookIndexItemSchema } from "./schema/book-index.schema";
@@ -41,7 +45,6 @@ export class BookAiService {
       if (result.success) {
         validatedItems.push(result.data as BookIndexCreateDto);
       } else {
-        console.warn("⚠️ [BookAiService] Validation failed for book_index item, applying fallbacks:", result.error.format());
         const rawSkill = item?.skill;
         const validSkill = (typeof rawSkill === "string" && (bookSkillZodEnum.options as string[]).includes(rawSkill)) ? rawSkill : "speaking";
         validatedItems.push({
@@ -71,7 +74,6 @@ export class BookAiService {
       if (result.success) {
         validatedItems.push(result.data as BookUnitCreateDto);
       } else {
-        console.warn("⚠️ [BookAiService] Validation failed for book_unit item, applying fallbacks:", result.error.format());
         validatedItems.push({
           number: typeof item?.number === "number" ? item.number : 1,
           title: typeof item?.title === "string" ? item.title : "Unit",
@@ -112,8 +114,6 @@ export class BookAiService {
       if (result.success) {
         validatedItems.push(result.data as BookLessonCreateDto);
       } else {
-        console.warn("⚠️ [BookAiService] Validation failed for book_lesson item, applying fallbacks:", result.error.format());
-        
         // Deducir valores por defecto de forma segura
         const fallbackUnitNumber = typeof item?.unitNumber === "number" ? item.unitNumber : 1;
         const fallbackTitle = typeof item?.title === "string" ? item.title : `COMMUNICATION`;
@@ -166,8 +166,6 @@ export class BookAiService {
       if (result.success) {
         validatedItems.push(result.data as BookPanelCreateDto);
       } else {
-        console.warn("⚠️ [BookAiService] Validation failed for book_panel item, applying fallbacks:", result.error.format());
-        
         const fallbackTitle = typeof item?.title === "string" ? item.title : "KEY VOCABULARY";
         const fallbackTheme = typeof item?.theme === "string" ? item.theme : undefined;
         const fallbackSubTheme = typeof item?.subTheme === "string" ? item.subTheme : undefined;
@@ -203,7 +201,6 @@ export class BookAiService {
       if (result.success) {
         validatedItems.push(result.data as BookAudioCreateDto);
       } else {
-        console.warn("⚠️ [BookAiService] Validation failed for book_audio item, applying fallbacks:", result.error.format());
         validatedItems.push({
           url: typeof item?.url === "string" ? item.url : "https://example.com/placeholder-audio.mp3",
           audioIndex: typeof item?.audioIndex === "string" ? item.audioIndex : "1.1",
@@ -217,13 +214,54 @@ export class BookAiService {
     return validatedItems;
   }
 
+  async transcribeAudio(dto: AudioTranscriptDto): Promise<{ transcription: string }> {
+    const groq = this.clientService.getGroq();
+    if (!process.env.GROQ_API_KEY) {
+      throw new Error("La clave de API de Groq (GROQ_API_KEY) no está configurada.");
+    }
+
+    // 1. Download audio file from URL
+    let audioBuffer: Buffer;
+    let contentType = "audio/mpeg";
+    try {
+      const response = await fetch(dto.url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      contentType = response.headers.get("content-type") || "audio/mpeg";
+      const arrayBuffer = await response.arrayBuffer();
+      audioBuffer = Buffer.from(arrayBuffer);
+    } catch (error) {
+      throw new Error(
+        `No se pudo descargar el archivo de audio desde la URL: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+
+    // 2. Call Groq Whisper
+    try {
+      const file = await Groq.toFile(audioBuffer, "audio.mp3", { type: contentType });
+
+      const transcription = await groq.audio.transcriptions.create({
+        file,
+        model: "whisper-large-v3-turbo",
+        temperature: 0,
+      });
+
+      return {
+        transcription: transcription.text || "",
+      };
+    } catch (error) {
+      throw new Error(
+        `Error al transcribir el audio usando Groq Whisper: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  }
+
   private async generatePreview(
     dto: BookPreviewDto,
     prompt: string,
   ): Promise<any> {
     const { image, bookPage, bookId } = dto;
-    console.log(`🤖 [BookAiService] generatePreview called for bookId: ${bookId}, bookPage: ${bookPage}`);
-    console.log(`🤖 [BookAiService] Prompt length: ${prompt.length} chars. Image base64 length: ${image.length} chars.`);
 
     let base64Data = image;
     let mimeType = "image/jpeg";
@@ -236,7 +274,6 @@ export class BookAiService {
       }
     }
 
-    console.log(`🤖 [BookAiService] Getting ChatGeminiAI LLM instance...`);
     const llm = this.clientService.getChatGeminiAI();
 
     const message = new HumanMessage({
@@ -253,20 +290,14 @@ export class BookAiService {
     });
 
     try {
-      console.log(`🤖 [BookAiService] Sending LLM text request (invoke)...`);
-      const startTime = Date.now();
       const response = await llm.invoke([message]);
-      const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-      
       const rawText = typeof response.content === "string" ? response.content : String(response.content);
-      console.log(`🤖 [BookAiService] LLM invoke success in ${duration}s. Raw response content length: ${rawText.length} chars.`);
 
       // Extraer y parsear JSON de forma robusta
       const cleanJsonText = this.cleanMarkdownJson(rawText);
       const parsedObj = JSON.parse(cleanJsonText);
       return parsedObj;
     } catch (error) {
-      console.error("❌ [BookAiService] Error in Gemini unstructured invocation or JSON parsing:", error);
       // Retornar estructura de inserts vacía para evitar que la app explote
       return { inserts: [] };
     }
@@ -277,7 +308,6 @@ export class BookAiService {
     const jsonBlockRegex = /```json\s*([\s\S]*?)\s*```/;
     const match = text.match(jsonBlockRegex);
     if (match) {
-      console.log("🤖 [BookAiService] Extracted JSON using ```json block");
       return match[1].trim();
     }
 
@@ -285,7 +315,6 @@ export class BookAiService {
     const genericBlockRegex = /```\s*([\s\S]*?)\s*```/;
     const genericMatch = text.match(genericBlockRegex);
     if (genericMatch) {
-      console.log("🤖 [BookAiService] Extracted JSON using generic markdown block");
       return genericMatch[1].trim();
     }
 
@@ -293,7 +322,6 @@ export class BookAiService {
     const firstBrace = text.indexOf("{");
     const lastBrace = text.lastIndexOf("}");
     if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      console.log("🤖 [BookAiService] Extracted JSON matching first { and last }");
       return text.substring(firstBrace, lastBrace + 1).trim();
     }
 

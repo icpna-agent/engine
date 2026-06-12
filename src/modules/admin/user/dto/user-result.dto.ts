@@ -24,4 +24,7 @@ export class UserResultDto {
 
   @ApiPropertyOptional({ type: Date, nullable: true })
   deletedAt: Date | null;
+
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  currentBookId: number | null;
 }

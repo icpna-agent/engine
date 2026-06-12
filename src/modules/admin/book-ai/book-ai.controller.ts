@@ -8,6 +8,7 @@ import { BookUnitCreateDto } from "../book/dto/book-unit/book-unit-create.dto";
 import { BookLessonCreateDto } from "../book/dto/book-lesson/book-lesson-create.dto";
 import { BookPanelCreateDto } from "../book/dto/book-panel/book-panel-create.dto";
 import { BookAudioCreateDto } from "../book/dto/book-audio/book-audio-create.dto";
+import { AudioTranscriptDto, AudioTranscriptResultDto } from "./dto/audio-transcript.dto";
 
 @ApiTags("book-ai")
 @ApiBearerAuth()
@@ -49,5 +50,12 @@ export class BookAiController {
   @ApiOkResponse({ type: [BookAudioCreateDto], description: "Arreglo de posibles inserciones para la tabla book_audio" })
   async previewBookAudio(@Body() dto: BookPreviewDto): Promise<BookAudioCreateDto[]> {
     return this.bookAiService.previewBookAudio(dto);
+  }
+
+  @Post("audio-transcript")
+  @ApiOperation({ summary: "Transcribe un archivo de audio a partir de su URL pública usando la IA de Gemini" })
+  @ApiOkResponse({ type: AudioTranscriptResultDto, description: "Transcripción del audio generada exitosamente" })
+  async transcribeAudio(@Body() dto: AudioTranscriptDto): Promise<AudioTranscriptResultDto> {
+    return this.bookAiService.transcribeAudio(dto);
   }
 }

@@ -7,8 +7,9 @@ import { MemoryService } from "src/features/memory/memory.service";
 import { ClientService } from "src/features/client/client.service";
 import { WhatsAppClient, WhatsAppCloudMessage } from "src/wb/messages/whatsapp-cloud-api";
 import { createSendTextMessageTool } from "../tools/send-text-message.tool";
-import { createSendImageMessageTool } from "../tools/send-image-message.tool";
 import { createSendAudioMessageTool } from "../tools/send-audio-message.tool";
+import { createSendAudioLibroMessageTool } from "../tools/send-audio-libro-message.tool";
+import { createSendImageLibroMessageTool } from "../tools/send-image-libro-message.tool";
 import { MessageMedia, Message } from "@db/tables/message.table";
 @Injectable()
 export class ProcessResponseService {
@@ -30,10 +31,13 @@ export class ProcessResponseService {
 
     const whatsappClient = new WhatsAppClient({ accessToken, phoneNumberId });
 
+    const bookId = context.payload.user?.currentBookId;
+
     const tools = [
       createSendTextMessageTool(accessToken, phoneNumberId, phone, templates),
-      createSendImageMessageTool(accessToken, phoneNumberId, phone, templates),
       createSendAudioMessageTool(accessToken, phoneNumberId, phone, templates, this.clientService.getGenAI()),
+      createSendAudioLibroMessageTool(accessToken, phoneNumberId, phone, templates, bookId),
+      createSendImageLibroMessageTool(accessToken, phoneNumberId, phone, templates, bookId),
     ];
 
     const agent = createAgent({

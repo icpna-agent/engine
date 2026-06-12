@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsBoolean, IsDate, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsDate, IsNotEmpty, IsOptional, IsString, IsInt } from "class-validator";
 import { Type } from "class-transformer";
 
 export class UserCreateDto {
@@ -24,4 +24,9 @@ export class UserCreateDto {
   @IsDate()
   @IsOptional()
   enabledTo?: Date;
+
+  @ApiPropertyOptional({ example: 1, nullable: true })
+  @IsInt()
+  @IsOptional()
+  currentBookId?: number | null;
 }

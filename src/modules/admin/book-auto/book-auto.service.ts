@@ -132,21 +132,16 @@ export class BookAutoService {
   }
 
   insertIa(dto: InsertIaDto): Observable<MessageEvent> {
-    console.log(`📥 [insertIa] Starting process for bookPage: ${dto.bookPage}, bookId: ${dto.bookId}`);
-    console.log(`📂 [insertIa] Badges to process:`, dto.badges);
-
     return new Observable<MessageEvent>((subscriber) => {
       let isCancelled = false;
 
       const run = async () => {
         try {
           if (isCancelled) {
-            console.log(`⚠️ [insertIa] Process cancelled before starting page: ${dto.bookPage}`);
             return;
           }
 
           // 1. Upload page to Storage & Meta
-          console.log(`🚀 [insertIa] 1. Uploading page image to Storage & Meta...`);
           subscriber.next({
             type: "progress",
             data: JSON.stringify({ message: "Subiendo imagen..." }),
@@ -178,15 +173,12 @@ export class BookAutoService {
           };
 
           const uploadResult = await this.storageService.uploadImageToMeta(file);
-          console.log(`✅ [insertIa] Upload to Storage/Meta successful: URL=${uploadResult.url}, metaMediaId=${uploadResult.metaMediaId}`);
 
           if (isCancelled) {
-            console.log(`⚠️ [insertIa] Process cancelled after upload for page: ${dto.bookPage}`);
             return;
           }
 
           // 2. Register/update in book_image table
-          console.log(`💾 [insertIa] 2. Querying/updating book_image database table...`);
           const [existingImage] = await database
              .select()
              .from(bookImage)
@@ -200,13 +192,11 @@ export class BookAutoService {
 
           const metaMediaId = uploadResult.metaMediaId ? Number(uploadResult.metaMediaId) : undefined;
           if (existingImage) {
-            console.log(`💾 [insertIa] Updating existing book_image record with ID ${existingImage.id}`);
             await this.bookService.updateBookImage(existingImage.id, {
               url: uploadResult.url,
               metaMediaId,
             });
           } else {
-            console.log(`💾 [insertIa] Inserting new book_image record`);
             await this.bookService.createBookImage({
               bookId: dto.bookId,
               bookPage: dto.bookPage,
@@ -216,7 +206,6 @@ export class BookAutoService {
           }
 
           if (isCancelled) {
-            console.log(`⚠️ [insertIa] Process cancelled after database registration for page: ${dto.bookPage}`);
             return;
           }
 
@@ -229,11 +218,8 @@ export class BookAutoService {
 
           for (const badge of dto.badges) {
             if (isCancelled) {
-              console.log(`⚠️ [insertIa] Process cancelled during badge loop for page: ${dto.bookPage}`);
               return;
             }
-
-            console.log(`🤖 [insertIa] 3. Starting AI analysis for badge: "${badge}"...`);
 
             if (badge === "index") {
               subscriber.next({
@@ -241,69 +227,56 @@ export class BookAutoService {
                 data: JSON.stringify({ message: "Creando Índices..." }),
               });
               const items = await this.bookAiService.previewBookIndex(previewDto);
-              console.log(`🤖 [insertIa] IA detected ${items.length} index items. Saving to DB...`);
               for (const item of items) {
                 if (isCancelled) return;
                 await this.bookService.createBookIndex(item);
               }
-              console.log(`🤖 [insertIa] Saved index items successfully.`);
             } else if (badge === "unit") {
               subscriber.next({
                 type: "progress",
                 data: JSON.stringify({ message: "Creando Unidades..." }),
               });
               const items = await this.bookAiService.previewBookUnit(previewDto);
-              console.log(`🤖 [insertIa] IA detected ${items.length} unit items. Saving to DB...`);
               for (const item of items) {
                 if (isCancelled) return;
                 await this.bookService.createBookUnit(item);
               }
-              console.log(`🤖 [insertIa] Saved unit items successfully.`);
             } else if (badge === "lesson") {
               subscriber.next({
                 type: "progress",
                 data: JSON.stringify({ message: "Creando Lecciones..." }),
               });
-              console.log(`🤖 [insertIa] Calling bookAiService.previewBookLesson...`);
               const items = await this.bookAiService.previewBookLesson(previewDto);
-              console.log(`🤖 [insertIa] IA detected ${items.length} lesson items. Saving to DB...`);
               for (const item of items) {
                 if (isCancelled) return;
                 await this.bookService.createBookLesson(item);
               }
-              console.log(`🤖 [insertIa] Saved lesson items successfully.`);
             } else if (badge === "panel") {
               subscriber.next({
                 type: "progress",
                 data: JSON.stringify({ message: "Creando Paneles..." }),
               });
               const items = await this.bookAiService.previewBookPanel(previewDto);
-              console.log(`🤖 [insertIa] IA detected ${items.length} panel items. Saving to DB...`);
               for (const item of items) {
                 if (isCancelled) return;
                 await this.bookService.createBookPanel(item);
               }
-              console.log(`🤖 [insertIa] Saved panel items successfully.`);
             } else if (badge === "audio") {
               subscriber.next({
                 type: "progress",
                 data: JSON.stringify({ message: "Creando Audios..." }),
               });
               const items = await this.bookAiService.previewBookAudio(previewDto);
-              console.log(`🤖 [insertIa] IA detected ${items.length} audio items. Saving to DB...`);
               for (const item of items) {
                 if (isCancelled) return;
                 await this.bookService.createBookAudio(item);
               }
-              console.log(`🤖 [insertIa] Saved audio items successfully.`);
             }
           }
 
           if (isCancelled) {
-            console.log(`⚠️ [insertIa] Process cancelled at final completion for page: ${dto.bookPage}`);
             return;
           }
-          console.log(`✅ [insertIa] Process fully completed successfully for page: ${dto.bookPage}`);
           subscriber.next({
             type: "complete",
             data: JSON.stringify({ message: `Procesamiento completado para la página ${dto.bookPage}.` }),
@@ -311,7 +284,6 @@ export class BookAutoService {
           subscriber.complete();
         } catch (error) {
           if (!isCancelled) {
-            console.error("❌ [insertIa] Error in process:", error);
             subscriber.next({
               type: "error",
               data: JSON.stringify({
@@ -326,7 +298,6 @@ export class BookAutoService {
       run();
 
       return () => {
-        console.log(`⚠️ [insertIa] Subscriber unsubscribed / connection closed by client.`);
         isCancelled = true;
       };
     });

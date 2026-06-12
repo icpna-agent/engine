@@ -1,4 +1,4 @@
-import { boolean, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, serial, text, timestamp, integer } from 'drizzle-orm/pg-core';
 
 export const user = pgTable('user', {
   id: serial('id').primaryKey(),
@@ -6,6 +6,7 @@ export const user = pgTable('user', {
   enabled: boolean('enabled').default(true).notNull(),
   enabledFrom: timestamp('enabled_from'),
   enabledTo: timestamp('enabled_to'),
+  currentBookId: integer('current_book_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
