@@ -1,12 +1,16 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { UserRepository } from "@repositories/user.repository";
+import { ChatRepository } from "@repositories/chat.repository";
 import { UserCreateDto } from "./dto/user-create.dto";
 import { UserUpdateDto } from "./dto/user-update.dto";
 import { UserListFiltersDto } from "./dto/user-list.dto";
 
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly chatRepository: ChatRepository,
+  ) {}
 
   private buildPaginatedResponse<T>(
     data: T[],
@@ -71,6 +75,19 @@ export class UserService {
   async delete(id: number) {
     await this.findOne(id);
     await this.userRepository.delete(id);
+    return { success: true };
+  }
+
+  async disableChat(userId: number) {
+    await this.findOne(userId);
+
+    const lastChat = await this.chatRepository.findLastByUserId(userId);
+    if (!lastChat) {
+      throw new NotFoundException(`No chats found for user with ID ${userId}`);
+    }
+
+    await this.chatRepository.update(lastChat.id, { enabled: false });
+
     return { success: true };
   }
 }

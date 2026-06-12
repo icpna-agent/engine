@@ -23,6 +23,7 @@ import { UserUpdateDto } from "./dto/user-update.dto";
 import { UserListDto, UserListFiltersDto } from "./dto/user-list.dto";
 import { UserResultDto } from "./dto/user-result.dto";
 import { UserDeleteResultDto } from "./dto/user-delete-result.dto";
+import { UserDisableChatResultDto } from "./dto/user-disable-chat-result.dto";
 
 @ApiTags("user")
 @ApiBearerAuth()
@@ -67,5 +68,13 @@ export class UserController {
   @ApiOkResponse({ type: UserDeleteResultDto })
   delete(@Param("id") id: string) {
     return this.userService.delete(+id);
+  }
+
+  @Post("disable-chat/:id")
+  @ApiOperation({ summary: "Disable the latest chat of a user" })
+  @ApiParam({ name: "id", type: Number })
+  @ApiOkResponse({ type: UserDisableChatResultDto })
+  disableChat(@Param("id") id: string) {
+    return this.userService.disableChat(+id);
   }
 }

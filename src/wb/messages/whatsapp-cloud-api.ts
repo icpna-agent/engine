@@ -2620,7 +2620,7 @@ export class WhatsAppClient {
 
   private async request<T>(endpoint: string, method: string, body?: unknown): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     const headers: HeadersInit = {
       'Authorization': `Bearer ${this.config.accessToken}`,
       'Content-Type': 'application/json',
@@ -2641,7 +2641,7 @@ export class WhatsAppClient {
 
   private async requestFormData<T>(endpoint: string, method: string, body: FormData): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     const headers: HeadersInit = {
       'Authorization': `Bearer ${this.config.accessToken}`,
     };

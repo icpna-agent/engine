@@ -6,7 +6,7 @@ import { WhatsAppClient } from "src/wb/messages/whatsapp-cloud-api";
 
 @Injectable()
 export class ProcessInstanceService {
-  constructor(private readonly instanceRepository: InstanceRepository) {}
+  constructor(private readonly instanceRepository: InstanceRepository) { }
 
   async process(context: Context): Promise<Context> {
     const botId = context.payload.bot?.id;

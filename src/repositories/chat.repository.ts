@@ -31,6 +31,16 @@ export class ChatRepository {
       .where(and(eq(chat.user_id, userId), isNull(chat.deletedAt)));
   }
 
+  async findLastByUserId(userId: number): Promise<Chat | undefined> {
+    const result = await database
+      .select()
+      .from(chat)
+      .where(and(eq(chat.user_id, userId), isNull(chat.deletedAt)))
+      .orderBy(desc(chat.createdAt))
+      .limit(1);
+    return result[0];
+  }
+
   async findByBotAndUser(botId: number, userId: number): Promise<Chat | undefined> {
     const result = await database
       .select()
@@ -50,17 +60,18 @@ export class ChatRepository {
   }
 
   async findOrCreate(botId: number, userId: number, remote: ChatRemote): Promise<Chat> {
-    let chat = await this.findByBotAndUser(botId, userId);
+    let lastChat = await this.findLastByBotAndUser(botId, userId);
     
-    if (!chat) {
-      chat = await this.create({
+    if (!lastChat || lastChat.enabled === false) {
+      lastChat = await this.create({
         bot_id: botId,
         user_id: userId,
         remote: remote,
+        enabled: true,
       });
     }
     
-    return chat;
+    return lastChat;
   }
 
   async create(data: ChatInsert): Promise<Chat> {

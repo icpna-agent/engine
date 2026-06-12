@@ -47,19 +47,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Aquí se ejecutan las pruebas unitarias desarrolladas con TDD.
+      # Aquí se ejecutan las pruebas unitarias desarrolladas con BDD y TDD.
       - name: Run unit tests
         run: npm test -- --runInBand --passWithNoTests
 
-      # Cuando tengas configuradas las pruebas E2E:
-      #
-      # - name: Run E2E tests
-      #   run: npm run test:e2e
+      - name: Run E2E tests
+        run: npm run test:e2e
 
-      # Cuando tengas configuradas las pruebas BDD con Cucumber:
-      #
-      # - name: Run BDD tests
-      #   run: npm run test:bdd
+      - name: Run BDD tests
+        run: npm run test:bdd
 
       - name: Build NestJS application
         run: npm run build
