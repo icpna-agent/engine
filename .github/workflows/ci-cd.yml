@@ -1,26 +1,34 @@
 name: CI/CD Engine
 
 on:
+  # Valida los Pull Requests dirigidos a main.
   pull_request:
     branches:
       - main
 
+  # Valida los push realizados a main y develop.
   push:
     branches:
       - main
       - develop
 
+  # Permite ejecutar el workflow manualmente.
   workflow_dispatch:
 
-# El workflow solamente necesita leer el repositorio.
+# GitHub Actions solamente necesita leer el repositorio.
 permissions:
   contents: read
 
+# Si llegan varios commits seguidos a la misma rama,
+# cancela la ejecución anterior.
 concurrency:
   group: engine-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # =========================================================
+  # 1. VALIDACIÓN
+  # =========================================================
   validate:
     name: Test, build and validate Docker image
     runs-on: ubuntu-latest
@@ -39,24 +47,45 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Aquí se ejecutan las pruebas unitarias desarrolladas con TDD.
       - name: Run unit tests
         run: npm test -- --runInBand --passWithNoTests
+
+      # Cuando tengas configuradas las pruebas E2E:
+      #
+      # - name: Run E2E tests
+      #   run: npm run test:e2e
+
+      # Cuando tengas configuradas las pruebas BDD con Cucumber:
+      #
+      # - name: Run BDD tests
+      #   run: npm run test:bdd
 
       - name: Build NestJS application
         run: npm run build
 
+      # No publica la imagen.
+      # Solo comprueba que el Dockerfile pueda construirse correctamente.
       - name: Validate Docker image
         run: docker build -t erixcel-engine:${{ github.sha }} .
 
+  # =========================================================
+  # 2. DEPLOY
+  # =========================================================
   deploy:
     name: Deploy to Easypanel
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    # Este job espera que validate termine correctamente.
     needs:
       - validate
 
-    # Despliega únicamente desde main.
-    # No despliega desde pull requests ni desde develop.
-    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    # Solo despliega:
+    # - desde la rama main;
+    # - después de un push o ejecución manual;
+    # - nunca desde un Pull Request ni desde develop.
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
 
     env:
       EASYPANEL_DEPLOY_WEBHOOK: ${{ secrets.EASYPANEL_DEPLOY_WEBHOOK }}
@@ -74,14 +103,18 @@ jobs:
       - name: Trigger Easypanel deployment
         shell: bash
         run: |
-          curl \
-            --fail \
+          RESPONSE=$(curl \
+            --fail-with-body \
             --show-error \
             --silent \
-            --request POST \
+            --location \
             --retry 3 \
+            --retry-all-errors \
             --retry-delay 2 \
+            --connect-timeout 10 \
             --max-time 60 \
             "$EASYPANEL_DEPLOY_WEBHOOK"
+          )
 
+          echo "$RESPONSE"
           echo "Easypanel deployment triggered successfully."
