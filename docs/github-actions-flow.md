@@ -12,26 +12,27 @@ flowchart TD
   B -->|"Ejecucion manual"| C
 
   C --> D["Checkout repository"]
-  D --> E["Setup Node.js 20"]
+  D --> E["Setup Node.js 22"]
   E --> F["npm ci"]
-  F --> G["Unit tests<br/>npm test -- --runInBand --passWithNoTests"]
-  G --> H["E2E tests<br/>npm run test:e2e"]
-  H --> I["BDD tests<br/>npm run test:bdd"]
-  I --> J["Build NestJS<br/>npm run build"]
-  J --> K["Validate Docker image<br/>docker build"]
+  F --> G["Prepare test database<br/>npm run db:create"]
+  G --> H["Unit tests<br/>npm test -- --runInBand --passWithNoTests"]
+  H --> I["E2E tests<br/>npm run test:e2e"]
+  I --> J["BDD tests<br/>npm run test:bdd"]
+  J --> K["Build NestJS<br/>npm run build"]
+  K --> L["Validate Docker image<br/>docker build"]
 
-  K --> L{"Paso todo?"}
-  L -->|"No"| M["Pipeline fallido<br/>No despliega"]
-  L -->|"Si"| N{"Puede desplegar?"}
+  L --> M{"Paso todo?"}
+  M -->|"No"| N["Pipeline fallido<br/>No despliega"]
+  M -->|"Si"| O{"Puede desplegar?"}
 
-  N -->|"PR hacia main"| O["Solo validacion<br/>No despliega"]
-  N -->|"Push a develop"| O
-  N -->|"Push a main"| P["Deploy to Easypanel"]
-  N -->|"Manual en main"| P
+  O -->|"PR hacia main"| P["Solo validacion<br/>No despliega"]
+  O -->|"Push a develop"| P
+  O -->|"Push a main"| Q["Deploy to Easypanel"]
+  O -->|"Manual en main"| Q
 
-  P --> Q["Validar secret<br/>EASYPANEL_DEPLOY_WEBHOOK"]
-  Q --> R["Llamar webhook de Easypanel"]
-  R --> S["Easypanel reconstruye y publica"]
+  Q --> R["Validar secret<br/>EASYPANEL_DEPLOY_WEBHOOK"]
+  R --> S["Llamar webhook de Easypanel"]
+  S --> T["Easypanel reconstruye y publica"]
 ```
 
 ## Lectura Rapida
@@ -53,6 +54,9 @@ flowchart LR
   D --> E["Docker build"]
   E --> F["Deploy Easypanel"]
 
+  G["Postgres temporal en CI"] -.-> A
+  G -.-> B
+  G -.-> C
   A -.->|"Reglas internas del engine"| A1["test/bdd/modules/engine/tdd"]
   B -.->|"Endpoints reales con app Nest"| B1["test/e2e"]
   C -.->|"Comportamientos legibles"| C1["test/bdd/modules"]
@@ -62,11 +66,12 @@ flowchart LR
 
 El deploy a Easypanel solo ocurre cuando todo esto pasa correctamente:
 
-1. Tests unitarios/TDD.
-2. Tests E2E.
-3. Tests BDD.
-4. Build de NestJS.
-5. Construccion de Docker.
-6. Existencia del secret `EASYPANEL_DEPLOY_WEBHOOK`.
+1. Preparacion de la base temporal de pruebas.
+2. Tests unitarios/TDD.
+3. Tests E2E.
+4. Tests BDD.
+5. Build de NestJS.
+6. Construccion de Docker.
+7. Existencia del secret `EASYPANEL_DEPLOY_WEBHOOK`.
 
 Si una parte falla, GitHub Actions detiene el flujo y no llama a Easypanel.
