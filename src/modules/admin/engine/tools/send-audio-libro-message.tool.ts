@@ -48,17 +48,7 @@ export const createSendAudioLibroMessageTool = (
         const metaMediaId = audioRecord.metaMediaId;
         const url = audioRecord.url;
 
-        let isUrlOk = false;
         if (url) {
-          try {
-            const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(2000) });
-            isUrlOk = res.ok;
-          } catch (err) {
-            console.warn(`Error al verificar accesibilidad de la URL: ${url}`, err);
-          }
-        }
-
-        if (url && isUrlOk) {
           try {
             const payload: SendAudioMessageByUrlPayload = {
               messaging_product: "whatsapp",

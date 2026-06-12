@@ -48,17 +48,12 @@ export const createSendImageLibroMessageTool = (
         const metaMediaId = imageRecord.metaMediaId;
         const url = imageRecord.url;
 
-        let isUrlOk = false;
-        if (url) {
-          try {
-            const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(2000) });
-            isUrlOk = res.ok;
-          } catch (err) {
-            console.warn(`Error al verificar accesibilidad de la URL: ${url}`, err);
-          }
-        }
+        // Las URLs firmadas de Richmond caducan y Meta no arroja error síncrono al intentar enviarlas (fallan en silencio).
+        // Evitamos el HEAD request lento haciendo una comprobación síncrona instantánea.
+        const isRichmondUrl = url?.includes("richmondlp.com");
+        const useUrl = url && !isRichmondUrl;
 
-        if (url && isUrlOk) {
+        if (useUrl) {
           try {
             const payload: SendImageMessageByUrlPayload = {
               messaging_product: "whatsapp",
