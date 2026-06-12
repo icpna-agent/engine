@@ -98,6 +98,10 @@ jobs:
           path: allure-report
           retention-days: 7
 
+      - name: Configure GitHub Pages
+        if: ${{ always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+        uses: actions/configure-pages@v5
+
       - name: Upload Allure report to GitHub Pages
         if: ${{ always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
         uses: actions/upload-pages-artifact@v3
