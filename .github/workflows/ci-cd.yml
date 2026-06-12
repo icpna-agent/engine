@@ -72,6 +72,9 @@ jobs:
       - name: Prepare test database
         run: npm run db:create
 
+      - name: Seed test database
+        run: npm run db:seed
+
       # Aquí se ejecutan las pruebas unitarias desarrolladas con BDD y TDD.
       - name: Run unit tests
         run: npm test -- --runInBand --passWithNoTests

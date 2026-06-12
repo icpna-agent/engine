@@ -15,24 +15,25 @@ flowchart TD
   D --> E["Setup Node.js 22"]
   E --> F["npm ci"]
   F --> G["Prepare test database<br/>npm run db:create"]
-  G --> H["Unit tests<br/>npm test -- --runInBand --passWithNoTests"]
-  H --> I["E2E tests<br/>npm run test:e2e"]
-  I --> J["BDD tests<br/>npm run test:bdd"]
-  J --> K["Build NestJS<br/>npm run build"]
-  K --> L["Validate Docker image<br/>docker build"]
+  G --> H["Seed test database<br/>npm run db:seed"]
+  H --> I["Unit tests<br/>npm test -- --runInBand --passWithNoTests"]
+  I --> J["E2E tests<br/>npm run test:e2e"]
+  J --> K["BDD tests<br/>npm run test:bdd"]
+  K --> L["Build NestJS<br/>npm run build"]
+  L --> M["Validate Docker image<br/>docker build"]
 
-  L --> M{"Paso todo?"}
-  M -->|"No"| N["Pipeline fallido<br/>No despliega"]
-  M -->|"Si"| O{"Puede desplegar?"}
+  M --> N{"Paso todo?"}
+  N -->|"No"| O["Pipeline fallido<br/>No despliega"]
+  N -->|"Si"| P{"Puede desplegar?"}
 
-  O -->|"PR hacia main"| P["Solo validacion<br/>No despliega"]
-  O -->|"Push a develop"| P
-  O -->|"Push a main"| Q["Deploy to Easypanel"]
-  O -->|"Manual en main"| Q
+  P -->|"PR hacia main"| Q["Solo validacion<br/>No despliega"]
+  P -->|"Push a develop"| Q
+  P -->|"Push a main"| R["Deploy to Easypanel"]
+  P -->|"Manual en main"| R
 
-  Q --> R["Validar secret<br/>EASYPANEL_DEPLOY_WEBHOOK"]
-  R --> S["Llamar webhook de Easypanel"]
-  S --> T["Easypanel reconstruye y publica"]
+  R --> S["Validar secret<br/>EASYPANEL_DEPLOY_WEBHOOK"]
+  S --> T["Llamar webhook de Easypanel"]
+  T --> U["Easypanel reconstruye y publica"]
 ```
 
 ## Lectura Rapida
@@ -67,11 +68,12 @@ flowchart LR
 El deploy a Easypanel solo ocurre cuando todo esto pasa correctamente:
 
 1. Preparacion de la base temporal de pruebas.
-2. Tests unitarios/TDD.
-3. Tests E2E.
-4. Tests BDD.
-5. Build de NestJS.
-6. Construccion de Docker.
-7. Existencia del secret `EASYPANEL_DEPLOY_WEBHOOK`.
+2. Carga de datos semilla.
+3. Tests unitarios/TDD.
+4. Tests E2E.
+5. Tests BDD.
+6. Build de NestJS.
+7. Construccion de Docker.
+8. Existencia del secret `EASYPANEL_DEPLOY_WEBHOOK`.
 
 Si una parte falla, GitHub Actions detiene el flujo y no llama a Easypanel.
