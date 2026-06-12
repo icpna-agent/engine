@@ -16,6 +16,7 @@ export const createSendAudioMessageTool = (
 ) => {
   return tool(
     async ({ text }) => {
+      console.log(`🔧 Running tool: send_audio_message | params: text="${text}"`);
       const whatsappClient = new WhatsAppClient({
         accessToken,
         phoneNumberId,

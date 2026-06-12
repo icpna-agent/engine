@@ -14,6 +14,7 @@ export const createSendTextMessageTool = (
 ) => {
   return tool(
     async ({ text }) => {
+      console.log(`🔧 Running tool: send_text_message | params: text="${text}"`);
       const whatsappClient = new WhatsAppClient({
         accessToken,
         phoneNumberId,

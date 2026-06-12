@@ -14,6 +14,7 @@ export const createSendImageMessageTool = (
 ) => {
   return tool(
     async ({ url }) => {
+      console.log(`🔧 Running tool: send_image_message | params: url="${url}"`);
       const whatsappClient = new WhatsAppClient({
         accessToken,
         phoneNumberId,

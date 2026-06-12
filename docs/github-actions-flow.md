@@ -19,21 +19,23 @@ flowchart TD
   H --> I["Unit tests<br/>npm test -- --runInBand --passWithNoTests"]
   I --> J["E2E tests<br/>npm run test:e2e"]
   J --> K["BDD tests<br/>npm run test:bdd"]
-  K --> L["Build NestJS<br/>npm run build"]
-  L --> M["Validate Docker image<br/>docker build"]
+  K --> L["Generate Allure report<br/>npm run report:allure"]
+  L --> M["Upload Allure artifact<br/>allure-report"]
+  M --> N["Build NestJS<br/>npm run build"]
+  N --> O["Validate Docker image<br/>docker build"]
 
-  M --> N{"Paso todo?"}
-  N -->|"No"| O["Pipeline fallido<br/>No despliega"]
-  N -->|"Si"| P{"Puede desplegar?"}
+  O --> P{"Paso todo?"}
+  P -->|"No"| Q["Pipeline fallido<br/>No despliega"]
+  P -->|"Si"| R{"Puede desplegar?"}
 
-  P -->|"PR hacia main"| Q["Solo validacion<br/>No despliega"]
-  P -->|"Push a develop"| Q
-  P -->|"Push a main"| R["Deploy to Easypanel"]
-  P -->|"Manual en main"| R
+  R -->|"PR hacia main"| S["Solo validacion<br/>No despliega"]
+  R -->|"Push a develop"| S
+  R -->|"Push a main"| T["Deploy to Easypanel"]
+  R -->|"Manual en main"| T
 
-  R --> S["Validar secret<br/>EASYPANEL_DEPLOY_WEBHOOK"]
-  S --> T["Llamar webhook de Easypanel"]
-  T --> U["Easypanel reconstruye y publica"]
+  T --> U["Validar secret<br/>EASYPANEL_DEPLOY_WEBHOOK"]
+  U --> V["Llamar webhook de Easypanel"]
+  V --> W["Easypanel reconstruye y publica"]
 ```
 
 ## Lectura Rapida
@@ -51,9 +53,10 @@ flowchart TD
 flowchart LR
   A["Unit / TDD"] --> B["E2E"]
   B --> C["BDD / Cucumber"]
-  C --> D["Build NestJS"]
-  D --> E["Docker build"]
-  E --> F["Deploy Easypanel"]
+  C --> D["Allure report"]
+  D --> E["Build NestJS"]
+  E --> F["Docker build"]
+  F --> H["Deploy Easypanel"]
 
   G["Postgres temporal en CI"] -.-> A
   G -.-> B
@@ -72,8 +75,9 @@ El deploy a Easypanel solo ocurre cuando todo esto pasa correctamente:
 3. Tests unitarios/TDD.
 4. Tests E2E.
 5. Tests BDD.
-6. Build de NestJS.
-7. Construccion de Docker.
-8. Existencia del secret `EASYPANEL_DEPLOY_WEBHOOK`.
+6. Generacion y subida del reporte Allure como artifact.
+7. Build de NestJS.
+8. Construccion de Docker.
+9. Existencia del secret `EASYPANEL_DEPLOY_WEBHOOK`.
 
 Si una parte falla, GitHub Actions detiene el flujo y no llama a Easypanel.

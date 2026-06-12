@@ -19,6 +19,7 @@ export const createSendAudioLibroMessageTool = (
 ) => {
   return tool(
     async ({ audioIndex }) => {
+      console.log(`🔧 Running tool: send_audio_libro_message | params: audioIndex="${audioIndex}"`);
       if (!bookId) {
         return "Error: No se tiene un libro seleccionado actualmente para el usuario. Asigna un libro primero.";
       }
@@ -47,7 +48,17 @@ export const createSendAudioLibroMessageTool = (
         const metaMediaId = audioRecord.metaMediaId;
         const url = audioRecord.url;
 
+        let isUrlOk = false;
         if (url) {
+          try {
+            const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(2000) });
+            isUrlOk = res.ok;
+          } catch (err) {
+            console.warn(`Error al verificar accesibilidad de la URL: ${url}`, err);
+          }
+        }
+
+        if (url && isUrlOk) {
           try {
             const payload: SendAudioMessageByUrlPayload = {
               messaging_product: "whatsapp",
@@ -94,9 +105,9 @@ export const createSendAudioLibroMessageTool = (
 
           templates.push({ ...payload, _sent: true });
           await whatsappClient.sendAudioMessageById(payload);
-          return `Audio de libro con índice ${audioIndex} enviado exitosamente usando metaMediaId por defecto: ${metaMediaId}`;
+          return `Audio de libro con índice ${audioIndex} enviado exitosamente usando metaMediaId (URL no disponible o expirada): ${metaMediaId}`;
         } else {
-          return `Error: El registro del audio ${audioIndex} existe pero no tiene ni metaMediaId ni url asignados.`;
+          return `Error: El registro del audio ${audioIndex} existe pero no tiene ni metaMediaId ni url válida asignados.`;
         }
       } catch (error) {
         console.error("Error en flujo de enviar audio del libro:", error);

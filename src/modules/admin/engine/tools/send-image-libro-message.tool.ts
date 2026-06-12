@@ -19,6 +19,7 @@ export const createSendImageLibroMessageTool = (
 ) => {
   return tool(
     async ({ bookPage }) => {
+      console.log(`🔧 Running tool: send_image_libro_message | params: bookPage=${bookPage}`);
       if (!bookId) {
         return "Error: No se tiene un libro seleccionado actualmente para el usuario. Asigna un libro primero.";
       }
@@ -47,7 +48,17 @@ export const createSendImageLibroMessageTool = (
         const metaMediaId = imageRecord.metaMediaId;
         const url = imageRecord.url;
 
+        let isUrlOk = false;
         if (url) {
+          try {
+            const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(2000) });
+            isUrlOk = res.ok;
+          } catch (err) {
+            console.warn(`Error al verificar accesibilidad de la URL: ${url}`, err);
+          }
+        }
+
+        if (url && isUrlOk) {
           try {
             const payload: SendImageMessageByUrlPayload = {
               messaging_product: "whatsapp",
@@ -94,9 +105,9 @@ export const createSendImageLibroMessageTool = (
 
           templates.push({ ...payload, _sent: true });
           await whatsappClient.sendImageMessageById(payload);
-          return `Página del libro ${bookPage} enviada exitosamente usando metaMediaId por defecto: ${metaMediaId}`;
+          return `Página del libro ${bookPage} enviada exitosamente usando metaMediaId (URL no disponible o expirada): ${metaMediaId}`;
         } else {
-          return `Error: El registro de la página ${bookPage} existe pero no tiene ni metaMediaId ni url asignados.`;
+          return `Error: El registro de la página ${bookPage} existe pero no tiene ni metaMediaId ni url válida asignados.`;
         }
       } catch (error) {
         console.error("Error en flujo de enviar imagen del libro:", error);
