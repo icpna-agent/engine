@@ -15,9 +15,10 @@ on:
   # Permite ejecutar el workflow manualmente.
   workflow_dispatch:
 
-# GitHub Actions solamente necesita leer el repositorio.
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
 # Si llegan varios commits seguidos a la misma rama,
 # cancela la ejecución anterior.
@@ -97,6 +98,12 @@ jobs:
           path: allure-report
           retention-days: 7
 
+      - name: Upload Allure report to GitHub Pages
+        if: ${{ always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: allure-report
+
       - name: Build NestJS application
         run: npm run build
 
@@ -106,7 +113,29 @@ jobs:
         run: docker build -t erixcel-engine:${{ github.sha }} .
 
   # =========================================================
-  # 2. DEPLOY
+  # 2. PUBLICAR REPORTE ALLURE
+  # =========================================================
+  publish-allure-report:
+    name: Publish Allure report to GitHub Pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs:
+      - validate
+
+    # Publica el reporte visual solo desde main.
+    if: ${{ always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy Allure report to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  # =========================================================
+  # 3. DEPLOY
   # =========================================================
   deploy:
     name: Deploy to Easypanel
