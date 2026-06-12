@@ -8,6 +8,7 @@ import { ClientService } from "src/features/client/client.service";
 import { WhatsAppClient, WhatsAppCloudMessage } from "src/wb/messages/whatsapp-cloud-api";
 import { createSendTextMessageTool } from "../tools/send-text-message.tool";
 import { createSendAudioMessageTool } from "../tools/send-audio-message.tool";
+import { createSendAudioTranscriptionMessageTool } from "../tools/send-audio-transcription-message.tool";
 import { createSendAudioLibroMessageTool } from "../tools/send-audio-libro-message.tool";
 import { createSendImageLibroMessageTool } from "../tools/send-image-libro-message.tool";
 import { MessageMedia, Message } from "@db/tables/message.table";
@@ -36,6 +37,7 @@ export class ProcessResponseService {
     const tools = [
       createSendTextMessageTool(accessToken, phoneNumberId, phone, templates),
       createSendAudioMessageTool(accessToken, phoneNumberId, phone, templates, this.clientService.getGenAI()),
+      createSendAudioTranscriptionMessageTool(accessToken, phoneNumberId, phone, templates, bookId),
       createSendAudioLibroMessageTool(accessToken, phoneNumberId, phone, templates, bookId),
       createSendImageLibroMessageTool(accessToken, phoneNumberId, phone, templates, bookId),
     ];

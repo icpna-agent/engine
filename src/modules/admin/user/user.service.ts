@@ -82,11 +82,9 @@ export class UserService {
     await this.findOne(userId);
 
     const lastChat = await this.chatRepository.findLastByUserId(userId);
-    if (!lastChat) {
-      throw new NotFoundException(`No chats found for user with ID ${userId}`);
+    if (lastChat) {
+      await this.chatRepository.update(lastChat.id, { enabled: false });
     }
-
-    await this.chatRepository.update(lastChat.id, { enabled: false });
 
     return { success: true };
   }
