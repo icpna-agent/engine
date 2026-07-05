@@ -69,7 +69,7 @@ describe("ClientService AI clients", () => {
     });
     expect(chatGoogleGenerativeAIMock).toHaveBeenCalledWith({
       apiKey: "google-key",
-      model: "models/gemini-2.5-flash-lite",
+      model: "gemini-3.1-flash-lite",
     });
     expect(langfuseMock).toHaveBeenCalledWith({
       secretKey: "lf-secret",

@@ -33,7 +33,7 @@ export class ClientService {
     this.pinecone = new Pinecone({
       apiKey: process.env.PICONE_API_KEY,
     });
-    
+
     // Initialize MongoDB
     this.mongo = new MongoClient(
       process.env.ATLAS_CONNECTION_STRING
@@ -48,7 +48,7 @@ export class ClientService {
     // Initialize ChatGeminiAI
     this.chatGeminiAI = new ChatGoogleGenerativeAI({
       apiKey: process.env.GOOGLE_API_KEY,
-      model: "models/gemini-2.5-flash-lite",
+      model: "gemini-3.1-flash-lite",
     });
 
     // Initialize OpenAIEmbeddings for conversations

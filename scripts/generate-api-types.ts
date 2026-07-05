@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 
 const SWAGGER_URL = 'http://localhost:3200/api-json';
-const OUTPUT_DIR = path.resolve(__dirname, '../../erixcel-admin/src/api');
+const OUTPUT_DIR = path.resolve(__dirname, '../../icpna-admin/src/api');
 const OUTPUT_FILE = 'backend.api.ts';
 
 // Crear directorio si no existe

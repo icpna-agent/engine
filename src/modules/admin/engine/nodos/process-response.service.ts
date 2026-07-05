@@ -1,7 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import { createAgent } from "langchain";
+import { createAgent, AgentMiddleware } from "langchain";
 import { HumanMessage, AIMessage, BaseMessage } from "@langchain/core/messages";
 import { MessagesAnnotation } from "@langchain/langgraph";
+import { RunnableBinding } from "@langchain/core/runnables";
+import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
+import { BaseChatModelCallOptions } from "@langchain/core/language_models/chat_models";
 import { Context } from "@models/agent.model";
 import { MemoryService } from "src/features/memory/memory.service";
 import { ClientService } from "src/features/client/client.service";
@@ -17,7 +20,7 @@ export class ProcessResponseService {
   constructor(
     private memoryService: MemoryService,
     private clientService: ClientService,
-  ) {}
+  ) { }
 
   async process(context: Context): Promise<Context> {
     const prompt = context.payload.bot?.prompt || "";
@@ -42,12 +45,36 @@ export class ProcessResponseService {
       createSendImageLibroMessageTool(accessToken, phoneNumberId, phone, templates, bookId),
     ];
 
+    const agentMiddleware: AgentMiddleware = {
+      name: "force_tool",
+      wrapModelCall: async (request, handler) => {
+        const messages = request.messages || [];
+        const lastMessage = messages[messages.length - 1];
+        const isLastMessageTool = lastMessage && lastMessage.type === "tool";
+
+        if (isLastMessageTool) {
+          return new AIMessage("");
+        }
+
+        return handler(request);
+      },
+    };
+
+    const boundModel = new RunnableBinding<BaseLanguageModelInput, BaseMessage, BaseChatModelCallOptions>({
+      bound: llm,
+      kwargs: {
+        tool_choice: "any",
+      },
+      config: {},
+    });
+
     const agent = createAgent({
-      model: llm,
+      model: boundModel,
       systemPrompt: prompt,
       tools: tools,
       checkpointer: checkpoint,
       stateSchema: MessagesAnnotation,
+      middleware: [agentMiddleware],
     });
 
     const config = this.memoryService.buildRunConfig(
@@ -113,7 +140,7 @@ export class ProcessResponseService {
           data: base64Data
         });
       }
-      
+
       if (m.type === "image") {
         contentList.push({
           type: "image_url",

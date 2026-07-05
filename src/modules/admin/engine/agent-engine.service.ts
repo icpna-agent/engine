@@ -5,7 +5,7 @@ import { Meta } from "@models/meta.model";
 
 @Injectable()
 export class AgentEngineService {
-  constructor(private flowService: FlowService) {}
+  constructor(private flowService: FlowService) { }
 
   verifyWebhook(mode: string, token: string, challenge: string): string {
     const verifyToken = "erixcel";

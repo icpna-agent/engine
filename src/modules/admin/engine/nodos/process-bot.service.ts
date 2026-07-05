@@ -5,7 +5,7 @@ import { BotRepository } from "@repositories/bot.repository";
 
 @Injectable()
 export class ProcessBotService {
-  constructor(private readonly botRepository: BotRepository) {}
+  constructor(private readonly botRepository: BotRepository) { }
 
   async process(context: Context): Promise<Context> {
     const phone = extractDisplayPhoneNumber(context.payload.entry);
