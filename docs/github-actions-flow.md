@@ -1,90 +1,43 @@
-# GitHub Actions CI/CD Flow
+# GitHub Actions flows
 
-Este esquema resume el flujo definido en `.github/workflows/ci-cd.yml`.
+Los workflows de pruebas y despliegue de Erixcel Engine están aislados.
 
-```mermaid
-flowchart TD
-  A["Cambio en GitHub"] --> B{"Evento"}
+## Pruebas
 
-  B -->|"Pull Request hacia main"| C["Ejecutar validacion"]
-  B -->|"Push a develop"| C
-  B -->|"Push a main"| C
-  B -->|"Ejecucion manual"| C
-
-  C --> D["Checkout repository"]
-  D --> E["Setup Node.js 22"]
-  E --> F["npm ci"]
-  F --> G["Prepare test database<br/>npm run db:create"]
-  G --> H["Seed test database<br/>npm run db:seed"]
-  H --> I["Unit tests<br/>npm test -- --runInBand --passWithNoTests"]
-  I --> J["E2E tests<br/>npm run test:e2e"]
-  J --> K["BDD tests<br/>npm run test:bdd"]
-  K --> L["Generate Allure report<br/>npm run report:allure"]
-  L --> M["Upload Allure artifact<br/>allure-report"]
-  M --> N{"Esta en main?"}
-  N -->|"Si"| O["Upload report to GitHub Pages"]
-  N -->|"No"| P["Solo artifact descargable"]
-  O --> Q["Publish Allure report<br/>GitHub Pages"]
-  P --> R["Build NestJS<br/>npm run build"]
-  Q --> R
-  R --> S["Validate Docker image<br/>docker build"]
-
-  S --> T{"Paso todo?"}
-  T -->|"No"| U["Pipeline fallido<br/>No despliega"]
-  T -->|"Si"| V{"Puede desplegar?"}
-
-  V -->|"PR hacia main"| W["Solo validacion<br/>No despliega"]
-  V -->|"Push a develop"| W
-  V -->|"Push a main"| X["Deploy to Easypanel"]
-  V -->|"Manual en main"| X
-
-  X --> Y["Validar secret<br/>EASYPANEL_DEPLOY_WEBHOOK"]
-  Y --> Z["Llamar webhook de Easypanel"]
-  Z --> AA["Easypanel reconstruye y publica"]
-```
-
-## Lectura Rapida
-
-| Caso | Que ejecuta | Despliega |
-| --- | --- | --- |
-| Pull Request hacia `main` | Tests, build y Docker build | No |
-| Push a `develop` | Tests, build y Docker build | No |
-| Push a `main` | Tests, build, Docker build y webhook | Si |
-| Ejecucion manual en `main` | Tests, build, Docker build y webhook | Si |
-
-## Capas De Pruebas
+El workflow `.github/workflows/tests.yml` se ejecuta en Pull Requests hacia
+`main`, pushes a `main` y `develop`, y manualmente.
 
 ```mermaid
 flowchart LR
-  A["Unit / TDD"] --> B["E2E"]
-  B --> C["BDD / Cucumber"]
-  C --> D["Allure report"]
-  D --> E["GitHub Pages"]
-  E --> F["Build NestJS"]
-  F --> H["Docker build"]
-  H --> I["Deploy Easypanel"]
-
-  G["Postgres temporal en CI"] -.-> A
-  G -.-> B
-  G -.-> C
-  A -.->|"Reglas internas del engine"| A1["test/bdd/modules/engine/tdd"]
-  B -.->|"Endpoints reales con app Nest"| B1["test/e2e"]
-  C -.->|"Comportamientos legibles"| C1["test/bdd/modules"]
+  A["Cambio en GitHub"] --> B["PostgreSQL temporal"]
+  B --> C["Unit tests"]
+  C --> D["E2E tests"]
+  D --> E["BDD tests"]
+  E --> F["Reporte Allure"]
+  F --> G{"Push a main"}
+  G -->|"Sí"| H["GitHub Pages"]
+  G -->|"No"| I["Artifact descargable"]
 ```
 
-## Regla Principal
+Este workflow no construye ni publica imágenes Docker y no realiza despliegues.
 
-El deploy a Easypanel solo ocurre cuando todo esto pasa correctamente:
+## Docker y Azure
 
-1. Preparacion de la base temporal de pruebas.
-2. Carga de datos semilla.
-3. Tests unitarios/TDD.
-4. Tests E2E.
-5. Tests BDD.
-6. Generacion y subida del reporte Allure como artifact.
-7. Publicacion del reporte Allure en GitHub Pages cuando corre en `main`.
-8. Build de NestJS.
-9. Construccion de Docker.
-10. Existencia del secret `EASYPANEL_DEPLOY_WEBHOOK`.
+El workflow `.github/workflows/deploy-azure.yml` usa la imagen
+`${DOCKERHUB_USERNAME}/icpna-engine`.
 
-Si una parte falla, GitHub Actions detiene el flujo y no llama a Easypanel.
+```mermaid
+flowchart LR
+  A["Pull Request a main"] --> B["Validar Docker build"]
+  C["Push a main"] --> D["Construir imagen linux/amd64"]
+  D --> E["Publicar tags latest y commit SHA en Docker Hub"]
+  E --> F["Actualizar Azure App Service icpna-engine"]
+```
+
+Secrets requeridos en GitHub:
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+- `AZURE_WEBAPP_PUBLISH_PROFILE`
+
+Easypanel ya no forma parte del CI/CD del proyecto.

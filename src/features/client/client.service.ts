@@ -48,7 +48,7 @@ export class ClientService {
     // Initialize ChatGeminiAI
     this.chatGeminiAI = new ChatGoogleGenerativeAI({
       apiKey: process.env.GOOGLE_API_KEY,
-      model: "gemini-3.1-flash-lite-preview",
+      model: "models/gemini-2.5-flash-lite",
     });
 
     // Initialize OpenAIEmbeddings for conversations

@@ -1,4 +1,4 @@
-name: CI/CD Engine
+name: Engine tests
 
 on:
   # Valida los Pull Requests dirigidos a main.
@@ -28,10 +28,10 @@ concurrency:
 
 jobs:
   # =========================================================
-  # 1. VALIDACIÓN
+  # 1. PRUEBAS
   # =========================================================
   validate:
-    name: Test, build and validate Docker image
+    name: Run test suites
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -108,14 +108,6 @@ jobs:
         with:
           path: allure-report
 
-      - name: Build NestJS application
-        run: npm run build
-
-      # No publica la imagen.
-      # Solo comprueba que el Dockerfile pueda construirse correctamente.
-      - name: Validate Docker image
-        run: docker build -t erixcel-engine:${{ github.sha }} .
-
   # =========================================================
   # 2. PUBLICAR REPORTE ALLURE
   # =========================================================
@@ -137,53 +129,3 @@ jobs:
       - name: Deploy Allure report to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-  # =========================================================
-  # 3. DEPLOY
-  # =========================================================
-  deploy:
-    name: Deploy to Easypanel
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    # Este job espera que validate termine correctamente.
-    needs:
-      - validate
-
-    # Solo despliega:
-    # - desde la rama main;
-    # - después de un push o ejecución manual;
-    # - nunca desde un Pull Request ni desde develop.
-    if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
-
-    env:
-      EASYPANEL_DEPLOY_WEBHOOK: ${{ secrets.EASYPANEL_DEPLOY_WEBHOOK }}
-
-    steps:
-      - name: Validate Easypanel webhook
-        shell: bash
-        run: |
-          if [ -z "${EASYPANEL_DEPLOY_WEBHOOK:-}" ]; then
-            echo "Missing GitHub secret: EASYPANEL_DEPLOY_WEBHOOK"
-            echo "Create it in Settings > Secrets and variables > Actions."
-            exit 1
-          fi
-
-      - name: Trigger Easypanel deployment
-        shell: bash
-        run: |
-          RESPONSE=$(curl \
-            --fail-with-body \
-            --show-error \
-            --silent \
-            --location \
-            --retry 3 \
-            --retry-all-errors \
-            --retry-delay 2 \
-            --connect-timeout 10 \
-            --max-time 60 \
-            "$EASYPANEL_DEPLOY_WEBHOOK"
-          )
-
-          echo "$RESPONSE"
-          echo "Easypanel deployment triggered successfully."
