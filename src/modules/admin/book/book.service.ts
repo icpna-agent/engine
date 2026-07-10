@@ -27,6 +27,14 @@ import { BookAudioListFiltersDto } from "./dto/book-audio/book-audio-list.dto";
 import { BookImageCreateDto } from "./dto/book-image/book-image-create.dto";
 import { BookImageUpdateDto } from "./dto/book-image/book-image-update.dto";
 import { BookImageListFiltersDto } from "./dto/book-image/book-image-list.dto";
+import { database } from "@db/connection.db";
+import { bookIndex } from "@db/tables/book-index.table";
+import { bookUnit } from "@db/tables/book-unit.table";
+import { bookLesson } from "@db/tables/book-lesson.table";
+import { bookPanel } from "@db/tables/book-panel.table";
+import { bookAudio } from "@db/tables/book-audio.table";
+import { bookImage } from "@db/tables/book-image.table";
+import { and, eq, isNull, or } from "drizzle-orm";
 
 @Injectable()
 export class BookService {
@@ -65,6 +73,121 @@ export class BookService {
     const book = await this.bookRepository.findOne(bookId);
     if (!book) throw new NotFoundException("Book not found");
     return book;
+  }
+
+  private async findActiveBookIndexDuplicate(dto: BookIndexCreateDto) {
+    const [existing] = await database
+      .select()
+      .from(bookIndex)
+      .where(
+        and(
+          eq(bookIndex.bookId, dto.bookId),
+          eq(bookIndex.title, dto.title),
+          eq(bookIndex.page, dto.page),
+          eq(bookIndex.skill, dto.skill),
+          isNull(bookIndex.deletedAt),
+        ),
+      );
+    return existing;
+  }
+
+  private async findActiveBookUnitDuplicate(dto: BookUnitCreateDto) {
+    const [existing] = await database
+      .select()
+      .from(bookUnit)
+      .where(
+        and(
+          eq(bookUnit.bookId, dto.bookId),
+          eq(bookUnit.number, dto.number),
+          isNull(bookUnit.deletedAt),
+        ),
+      );
+    return existing;
+  }
+
+  private async findActiveBookLessonDuplicate(dto: BookLessonCreateDto) {
+    const conditions = [
+      eq(bookLesson.bookId, dto.bookId),
+      eq(bookLesson.bookPage, dto.bookPage),
+      eq(bookLesson.unitNumber, dto.unitNumber),
+      eq(bookLesson.title, dto.title),
+      eq(bookLesson.skill, dto.skill),
+      isNull(bookLesson.deletedAt),
+    ];
+
+    if (dto.activityNumber !== undefined && dto.activityNumber !== null) {
+      conditions.push(eq(bookLesson.activityNumber, dto.activityNumber));
+    }
+
+    if (dto.letterNumber) {
+      conditions.push(eq(bookLesson.letterNumber, dto.letterNumber));
+    }
+
+    const [existing] = await database
+      .select()
+      .from(bookLesson)
+      .where(and(...conditions));
+    return existing;
+  }
+
+  private async findActiveBookPanelDuplicate(dto: BookPanelCreateDto) {
+    const conditions = [
+      eq(bookPanel.bookId, dto.bookId),
+      eq(bookPanel.bookPage, dto.bookPage),
+      eq(bookPanel.title, dto.title),
+      isNull(bookPanel.deletedAt),
+    ];
+
+    if (dto.theme) {
+      conditions.push(eq(bookPanel.theme, dto.theme));
+    }
+
+    if (dto.subTheme) {
+      conditions.push(eq(bookPanel.subTheme, dto.subTheme));
+    }
+
+    const [existing] = await database
+      .select()
+      .from(bookPanel)
+      .where(and(...conditions));
+    return existing;
+  }
+
+  private async findActiveBookAudioDuplicate(dto: BookAudioCreateDto) {
+    const duplicateByAudioIndex = and(
+      eq(bookAudio.bookId, dto.bookId),
+      eq(bookAudio.audioIndex, dto.audioIndex),
+      isNull(bookAudio.deletedAt),
+    );
+
+    const isPlaceholderUrl = dto.url.includes("example.com/placeholder-audio");
+    const duplicateByUrl = !isPlaceholderUrl
+      ? and(
+          eq(bookAudio.bookId, dto.bookId),
+          eq(bookAudio.url, dto.url),
+          isNull(bookAudio.deletedAt),
+        )
+      : undefined;
+
+    const [existing] = await database
+      .select()
+      .from(bookAudio)
+      .where(duplicateByUrl ? or(duplicateByAudioIndex, duplicateByUrl) : duplicateByAudioIndex);
+    return existing;
+  }
+
+  async findActiveBookImageByBookAndPage(bookId: number, bookPage: number) {
+    const [existing] = await database
+      .select()
+      .from(bookImage)
+      .where(
+        and(
+          eq(bookImage.bookId, bookId),
+          eq(bookImage.bookPage, bookPage),
+          isNull(bookImage.deletedAt),
+        ),
+      );
+    return existing;
   }
 
   async findAllBooks(filters: BookListFiltersDto) {
@@ -115,6 +238,8 @@ export class BookService {
 
   async createBookIndex(dto: BookIndexCreateDto) {
     await this.ensureBookExists(dto.bookId);
+    const existing = await this.findActiveBookIndexDuplicate(dto);
+    if (existing) return existing;
     return this.bookIndexRepository.create(dto);
   }
 
@@ -147,6 +272,8 @@ export class BookService {
 
   async createBookUnit(dto: BookUnitCreateDto) {
     await this.ensureBookExists(dto.bookId);
+    const existing = await this.findActiveBookUnitDuplicate(dto);
+    if (existing) return existing;
     return this.bookUnitRepository.create(dto);
   }
 
@@ -179,6 +306,8 @@ export class BookService {
 
   async createBookLesson(dto: BookLessonCreateDto) {
     await this.ensureBookExists(dto.bookId);
+    const existing = await this.findActiveBookLessonDuplicate(dto);
+    if (existing) return existing;
     return this.bookLessonRepository.create(dto);
   }
 
@@ -211,6 +340,8 @@ export class BookService {
 
   async createBookPanel(dto: BookPanelCreateDto) {
     await this.ensureBookExists(dto.bookId);
+    const existing = await this.findActiveBookPanelDuplicate(dto);
+    if (existing) return existing;
     return this.bookPanelRepository.create(dto);
   }
 
@@ -243,6 +374,8 @@ export class BookService {
 
   async createBookAudio(dto: BookAudioCreateDto) {
     await this.ensureBookExists(dto.bookId);
+    const existing = await this.findActiveBookAudioDuplicate(dto);
+    if (existing) return existing;
     return this.bookAudioRepository.create(dto);
   }
 
@@ -275,6 +408,11 @@ export class BookService {
 
   async createBookImage(dto: BookImageCreateDto) {
     await this.ensureBookExists(dto.bookId);
+    const existing = await this.findActiveBookImageByBookAndPage(
+      dto.bookId,
+      dto.bookPage,
+    );
+    if (existing) return existing;
     return this.bookImageRepository.create(dto);
   }
 

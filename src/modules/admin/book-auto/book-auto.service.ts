@@ -7,9 +7,6 @@ import { InsertIaDto } from "./dto/insert-ia.dto";
 import { StorageService } from "../storage/storage.service";
 import { BookService } from "../book/book.service";
 import { BookAiService } from "../book-ai/book-ai.service";
-import { database } from "@db/connection.db";
-import { bookImage } from "@db/tables/book-image.table";
-import { and, eq, isNull } from "drizzle-orm";
 
 @Injectable()
 export class BookAutoService {
@@ -141,67 +138,66 @@ export class BookAutoService {
             return;
           }
 
-          // 1. Upload page to Storage & Meta
+          // 1. Register page image only if it does not already exist
           subscriber.next({
             type: "progress",
-            data: JSON.stringify({ message: "Subiendo imagen..." }),
+            data: JSON.stringify({ message: "Validando imagen de página..." }),
           });
 
-          let base64Image = dto.image;
-          let mimeType = "image/jpeg";
-          let extension = "jpg";
-          if (base64Image.startsWith("data:")) {
-            const match = base64Image.match(/^data:([^;]+);base64,(.+)$/);
-            if (match) {
-              mimeType = match[1];
-              base64Image = match[2];
-              extension = mimeType.split("/")[1] || "jpg";
-            }
-          }
-          const buffer = Buffer.from(base64Image, "base64");
-          const file: Express.Multer.File = {
-            buffer,
-            originalname: `page_${dto.bookPage}.${extension}`,
-            mimetype: mimeType,
-            size: buffer.length,
-            fieldname: "file",
-            encoding: "7bit",
-            destination: "",
-            filename: "",
-            path: "",
-            stream: null as any,
-          };
+          const existingImage = await this.bookService.findActiveBookImageByBookAndPage(
+            dto.bookId,
+            dto.bookPage,
+          );
 
-          const uploadResult = await this.storageService.uploadImageToMeta(file);
-
-          if (isCancelled) {
-            return;
-          }
-
-          // 2. Register/update in book_image table
-          const [existingImage] = await database
-             .select()
-             .from(bookImage)
-             .where(
-               and(
-                 eq(bookImage.bookId, dto.bookId),
-                 eq(bookImage.bookPage, dto.bookPage),
-                 isNull(bookImage.deletedAt),
-               ),
-             );
-
-          const metaMediaId = uploadResult.metaMediaId ? Number(uploadResult.metaMediaId) : undefined;
           if (existingImage) {
-            await this.bookService.updateBookImage(existingImage.id, {
-              url: uploadResult.url,
-              metaMediaId,
+            subscriber.next({
+              type: "progress",
+              data: JSON.stringify({
+                message: `La imagen de la página ${dto.bookPage} ya existe. Se omite la subida.`,
+              }),
             });
           } else {
+            subscriber.next({
+              type: "progress",
+              data: JSON.stringify({ message: "Subiendo imagen..." }),
+            });
+
+            let base64Image = dto.image;
+            let mimeType = "image/jpeg";
+            let extension = "jpg";
+            if (base64Image.startsWith("data:")) {
+              const match = base64Image.match(/^data:([^;]+);base64,(.+)$/);
+              if (match) {
+                mimeType = match[1];
+                base64Image = match[2];
+                extension = mimeType.split("/")[1] || "jpg";
+              }
+            }
+            const buffer = Buffer.from(base64Image, "base64");
+            const file: Express.Multer.File = {
+              buffer,
+              originalname: `page_${dto.bookPage}.${extension}`,
+              mimetype: mimeType,
+              size: buffer.length,
+              fieldname: "file",
+              encoding: "7bit",
+              destination: "",
+              filename: "",
+              path: "",
+              stream: null as any,
+            };
+
+            const uploadResult = await this.storageService.uploadImageToMeta(file);
+
+            if (isCancelled) {
+              return;
+            }
+
             await this.bookService.createBookImage({
               bookId: dto.bookId,
               bookPage: dto.bookPage,
               url: uploadResult.url,
-              metaMediaId,
+              metaMediaId: undefined,
             });
           }
 

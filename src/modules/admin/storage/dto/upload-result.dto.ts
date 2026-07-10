@@ -142,8 +142,8 @@ export class UploadImageMetaResultDto {
   @ApiProperty()
   url!: string;
 
-  @ApiProperty()
-  metaMediaId!: string;
+  @ApiProperty({ required: false, nullable: true })
+  metaMediaId!: string | null;
 }
 
 export class UploadAudioMetaResultDto {
@@ -151,5 +151,8 @@ export class UploadAudioMetaResultDto {
   success!: boolean;
 
   @ApiProperty()
-  metaMediaId!: string;
+  url!: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  metaMediaId!: string | null;
 }

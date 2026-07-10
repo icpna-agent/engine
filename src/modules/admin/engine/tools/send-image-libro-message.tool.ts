@@ -2,7 +2,6 @@ import { tool } from "@langchain/core/tools";
 import {
   WhatsAppClient,
   WhatsAppCloudMessage,
-  SendImageMessageByIdPayload,
   SendImageMessageByUrlPayload,
 } from "src/wb/messages/whatsapp-cloud-api";
 import { z } from "zod";
@@ -45,7 +44,6 @@ export const createSendImageLibroMessageTool = (
           return `Error: No se encontró ninguna página ${bookPage} para el libro con ID ${bookId}.`;
         }
 
-        const metaMediaId = imageRecord.metaMediaId;
         const url = imageRecord.url;
 
         // Las URLs firmadas de Richmond caducan y Meta no arroja error síncrono al intentar enviarlas (fallan en silencio).
@@ -54,55 +52,21 @@ export const createSendImageLibroMessageTool = (
         const useUrl = url && !isRichmondUrl;
 
         if (useUrl) {
-          try {
-            const payload: SendImageMessageByUrlPayload = {
-              messaging_product: "whatsapp",
-              recipient_type: "individual",
-              to: phone,
-              type: "image",
-              image: {
-                link: url,
-              },
-            };
-
-            templates.push({ ...payload, _sent: true });
-            await whatsappClient.sendImageMessageByUrl(payload);
-            return `Página del libro ${bookPage} enviada exitosamente usando url: ${url}`;
-          } catch (sendError) {
-            console.warn(`Falló el envío de imagen usando url ${url}, intentando fallback a metaMediaId:`, sendError);
-            if (metaMediaId) {
-              const payload: SendImageMessageByIdPayload = {
-                messaging_product: "whatsapp",
-                recipient_type: "individual",
-                to: phone,
-                type: "image",
-                image: {
-                  id: String(metaMediaId),
-                },
-              };
-
-              templates.push({ ...payload, _sent: true });
-              await whatsappClient.sendImageMessageById(payload);
-              return `Página del libro ${bookPage} enviada exitosamente usando metaMediaId por fallo de URL: ${metaMediaId}`;
-            }
-            throw sendError;
-          }
-        } else if (metaMediaId) {
-          const payload: SendImageMessageByIdPayload = {
+          const payload: SendImageMessageByUrlPayload = {
             messaging_product: "whatsapp",
             recipient_type: "individual",
             to: phone,
             type: "image",
             image: {
-              id: String(metaMediaId),
+              link: url,
             },
           };
 
           templates.push({ ...payload, _sent: true });
-          await whatsappClient.sendImageMessageById(payload);
-          return `Página del libro ${bookPage} enviada exitosamente usando metaMediaId (URL no disponible o expirada): ${metaMediaId}`;
+          await whatsappClient.sendImageMessageByUrl(payload);
+          return `Página del libro ${bookPage} enviada exitosamente usando url: ${url}`;
         } else {
-          return `Error: El registro de la página ${bookPage} existe pero no tiene ni metaMediaId ni url válida asignados.`;
+          return `Error: El registro de la página ${bookPage} existe pero no tiene una URL pública válida asignada.`;
         }
       } catch (error) {
         console.error("Error en flujo de enviar imagen del libro:", error);
@@ -112,7 +76,7 @@ export const createSendImageLibroMessageTool = (
     {
       name: "send_image_libro_message",
       description:
-        "Busca en la base de datos la página del libro de trabajo del usuario utilizando el 'bookPage' (número de página del libro) y la envía al usuario por WhatsApp. Si existe un 'metaMediaId' (ID de Meta) para el archivo, se enviará usando ese ID para mayor rapidez; de lo contrario, se enviará mediante la URL pública por defecto.",
+        "Busca en la base de datos la página del libro de trabajo del usuario utilizando el 'bookPage' (número de página del libro) y la envía al usuario por WhatsApp usando su URL pública de Azure.",
       schema: z.object({
         bookPage: z
           .number()

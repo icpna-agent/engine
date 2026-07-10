@@ -1,5 +1,5 @@
 /// <reference types="multer" />
-import { Controller, Post, UseInterceptors, UploadedFile, UseGuards, Body } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiBody, ApiOperation, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
@@ -19,7 +19,7 @@ export class StorageController {
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: FileUploadDto })
-  @ApiOperation({ summary: 'Sube una imagen al proveedor externo freeimage.host' })
+  @ApiOperation({ summary: 'Sube una imagen a Azure Blob Storage' })
   @ApiOkResponse({ type: UploadResultDto, description: 'Imagen subida exitosamente' })
   async uploadFile(@UploadedFile() file: Express.Multer.File): Promise<UploadResultDto> {
     return this.storageService.uploadImage(file);
@@ -29,16 +29,22 @@ export class StorageController {
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: FileUploadDto })
-  @ApiOperation({ summary: 'Sube una imagen a freeimage.host y luego a Meta, devolviendo el ID de Meta' })
-  @ApiOkResponse({ type: UploadImageMetaResultDto, description: 'Imagen subida exitosamente a Meta' })
+  @ApiOperation({ summary: 'Sube una imagen a Azure Blob Storage. No sube a Meta.' })
+  @ApiOkResponse({ type: UploadImageMetaResultDto, description: 'Imagen subida exitosamente a Azure' })
   async uploadImageToMeta(@UploadedFile() file: Express.Multer.File): Promise<UploadImageMetaResultDto> {
     return this.storageService.uploadImageToMeta(file);
   }
 
   @Post('upload-audio-url-to-meta')
-  @ApiOperation({ summary: 'Descarga un audio desde una URL y lo sube a Meta, devolviendo el ID de Meta' })
-  @ApiOkResponse({ type: UploadAudioMetaResultDto, description: 'Audio subido exitosamente a Meta' })
+  @ApiOperation({ summary: 'Descarga un audio desde una URL y lo guarda en Azure. No sube a Meta.' })
+  @ApiOkResponse({ type: UploadAudioMetaResultDto, description: 'Audio subido exitosamente a Azure' })
   async uploadAudioUrlToMeta(@Body() dto: UploadAudioUrlDto): Promise<UploadAudioMetaResultDto> {
     return this.storageService.uploadAudioUrlToMeta(dto);
+  }
+
+  @Get('download-file')
+  @ApiOperation({ summary: 'Proxy para descargar/visualizar archivos de Azure' })
+  download(@Query('path') path: string) {
+    return this.storageService.download(path);
   }
 }

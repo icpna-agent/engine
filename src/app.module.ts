@@ -11,6 +11,7 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { AgentModule } from "./modules/admin/agent/agent.module";
 import { UserModule } from "./modules/admin/user/user.module";
 import { StorageModule } from "./modules/admin/storage/storage.module";
+import { ExternalAccessModule } from "./modules/external/access/external-access.module";
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { StorageModule } from "./modules/admin/storage/storage.module";
     AgentModule,
     UserModule,
     StorageModule,
+    ExternalAccessModule,
   ],
   controllers: [AppController],
   providers: [AppService],
